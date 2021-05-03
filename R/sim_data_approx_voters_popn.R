@@ -10,8 +10,8 @@
 #' \describe{
 #'  \item{age_group}{Age group}
 #'  \item{gender}{Gender}
-#'  \item{vote_for}{The party that being voted in the 2016 election}
-#'  \item{education}{Highest grade of education that is completed}
+#'  \item{vote_for}{The party voted for in the 2016 election}
+#'  \item{education}{Highest grade of education completed}
 #'  \item{state}{State}
 #'  \item{wt}{Raked and trimmed survey weight}
 #' }
