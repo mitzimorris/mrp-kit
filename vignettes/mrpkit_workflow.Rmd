@@ -1,5 +1,5 @@
 ---
-title: "Getting Started with MRP-Kit"
+title: "Getting Started with mrpkit"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Getting Started with MRP-Kit}
@@ -19,19 +19,19 @@ knitr::opts_chunk$set(
 library(mrpkit)
 ```
 
-This vignette presents the typical workflow of MRP-Kit, an R package for implementing a "grammar" for multilevel regression with post-stratification.
+This vignette presents the typical workflow of `mrpkit`, an R package for implementing a "grammar" for multilevel regression with post-stratification.
 
 
 # Introduction
 
-The aim of MRP-Kit is to use a grammar to perform Multilevel Regression with Poststratification (MRP). By using this package, you follow a specific workflow of MRP from creating the metadata of the survey and post-stratification objects, mapping these objects to each other, fitting the model, getting predictions, aggregating values, and visualizing the results. Hence, it creates a more reproducible and accountable environment for conducting MRP.
+The aim of `mrpkit` is to use a grammar to perform Multilevel Regression with Poststratification (MRP). By using this package, you follow a specific workflow of MRP from creating the metadata of the survey and post-stratification objects, mapping these objects to each other, fitting the model, getting predictions, aggregating values, and visualizing the results. Hence, it creates a more reproducible and accountable environment for conducting MRP.
 
-Unlike many R packages, MRP-Kit uses [Object Oriented Programming (R6 objects)](https://adv-r.hadley.nz/r6.html) (Chang, 2019). Thus, instead of calling a function to perform a task, we call a method that is embedded to an object using `object$method`. Typical usage of this package will create four objects: `SurveyData`, `SurveyQuestion`, `SurveyMap`, and `SurveyFit`. There are several methods in each of these objects that will be explained later in this vignette.   
+Unlike many R packages, `mrpkit` uses [Object Oriented Programming (R6 objects)](https://adv-r.hadley.nz/r6.html) (Chang, 2019). Thus, instead of calling a function to perform a task, we call a method that is embedded to an object using `object$method`. Typical usage of this package will create four objects: `SurveyData`, `SurveyQuestion`, `SurveyMap`, and `SurveyFit`. There are several methods in each of these objects that will be explained later in this vignette.   
 
 
 # Prerequisites
 
-Some of the methods in MRP-Kit use external packages i.e. `forcats` (Wickham, 2020) in `SurveyMapping$mapping`, `dplyr` (Wickham, François, Henry & Müller, 2020) in  `SurveyMapping$tabulate`, and `ggplot2` (Wickham, 2016) in `SurveyFit$visify`. To fit the MRP model, you might also need these packages:
+Some of the methods in `mrpkit` use external packages i.e. `forcats` (Wickham, 2020) in `SurveyMapping$mapping`, `dplyr` (Wickham, François, Henry & Müller, 2020) in  `SurveyMapping$tabulate`, and `ggplot2` (Wickham, 2016) in `SurveyFit$visify`. To fit the MRP model, you might also need these packages:
 
 - rstanarm (Goodrich, Gabry, Ali, & Brilleman, 2020), at least 2.21.0 version
 - brms (Bürkner, 2017)
@@ -40,7 +40,7 @@ Some of the methods in MRP-Kit use external packages i.e. `forcats` (Wickham, 20
 
 # Workflow
 
-The workflow to use MRP-Kit to implement MRP is:
+The workflow to use `mrpkit` to implement MRP is:
 
 1. Prepare the data.
 2. Create the `SurveyData` objects.
