@@ -24,8 +24,7 @@ feline_survey
 Example survey for package testing
 }
 \examples{
-
- feline_survey
+str(feline_survey)
 
 }
 \keyword{datasets}

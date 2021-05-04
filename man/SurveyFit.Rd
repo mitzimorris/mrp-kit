@@ -4,7 +4,7 @@
 \alias{SurveyFit}
 \title{SurveyFit}
 \description{
-An \link[R6:R6Class]{R6} SurveyFit object stores a fitted model
+An \link[R6:R6Class]{R6} \code{SurveyFit} object stores a fitted model
 object and provides methods for generating predicted probabilities for all
 poststrat cells, generating population and group estimates, and visualizing
 results.
@@ -27,8 +27,7 @@ feline_prefs <- SurveyData$new(
     pet_own = levels(feline_survey$pet_own),
     y = c("no","yes")
   ),
-  weights = feline_survey$wt,
-  design = formula("~.")
+  weights = feline_survey$wt
 )
 feline_prefs$print()
 
@@ -47,12 +46,10 @@ popn_obj <- SurveyData$new(
     age2 = levels(approx_popn$age2),
     pet_pref = levels(approx_popn$pet_pref)
   ),
-  weights = approx_popn$wt,
-  design = formula("~.")
+  weights = approx_popn$wt
 )
 popn_obj$print()
 
-# mapping between the two surveys
 q1 <- SurveyQuestion$new(
   name = "age",
   col_names = c("age1","age2"),
@@ -121,21 +118,24 @@ fit_2 <- ex_map$fit(
 
 # predicted probabilities
 # returns matrix with rows for poststrat cells, cols for posterior draws
-poststrat_fit <- fit_1$predictify()
+poststrat_estimates <- fit_1$population_predict()
 
 # estimates by age level
-preds_by_age <- fit_1$aggregate(poststrat_fit, by = "age")
-head(preds_by_age)
-preds_by_age \%>\%
+estimates_by_age <- fit_1$aggregate(poststrat_estimates, by = "age")
+head(estimates_by_age)
+estimates_by_age \%>\%
   group_by(age) \%>\%
   summarize(mean = mean(value), sd = sd(value))
 
-(plot1 <- fit_1$visify(preds_by_age))
+# plot estimates by age
+fit_1$plot(estimates_by_age)
 
 # population estimate
-preds_popn <- fit_1$aggregate(poststrat_fit)
-mean(preds_popn$value)
-(plot2 <- fit_1$visify(preds_popn))
+estimates_popn <- fit_1$aggregate(poststrat_estimates)
+mean(estimates_popn$value)
+
+# plot population estimate
+fit_1$plot(estimates_popn)
 
 }
 \section{Methods}{
@@ -145,9 +145,9 @@ mean(preds_popn$value)
 \item \href{#method-fit}{\code{SurveyFit$fit()}}
 \item \href{#method-map}{\code{SurveyFit$map()}}
 \item \href{#method-print}{\code{SurveyFit$print()}}
-\item \href{#method-predictify}{\code{SurveyFit$predictify()}}
+\item \href{#method-population_predict}{\code{SurveyFit$population_predict()}}
 \item \href{#method-aggregate}{\code{SurveyFit$aggregate()}}
-\item \href{#method-visify}{\code{SurveyFit$visify()}}
+\item \href{#method-plot}{\code{SurveyFit$plot()}}
 \item \href{#method-clone}{\code{SurveyFit$clone()}}
 }
 }
@@ -155,10 +155,22 @@ mean(preds_popn$value)
 \if{html}{\out{<a id="method-new"></a>}}
 \if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
+Create a new \code{SurveyFit} object. This method is called
+internally by the \verb{$fit()} method of the \code{\link{SurveyMap}} object and does
+not need to be called directly by the user.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SurveyFit$new(fit, map)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{fit}}{A fitted model object.}
+
+\item{\code{map}}{A \code{\link{SurveyMap}} object.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-fit"></a>}}
@@ -169,9 +181,6 @@ Access the fitted model object
 \if{html}{\out{<div class="r">}}\preformatted{SurveyFit$fit()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-The fitted model object.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-map"></a>}}
@@ -182,9 +191,6 @@ Access the SurveyMap object
 \if{html}{\out{<div class="r">}}\preformatted{SurveyFit$map()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-The \link{SurveyMap} object.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-print"></a>}}
@@ -204,27 +210,25 @@ Call the fitted model object's print method
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-predictify"></a>}}
-\if{latex}{\out{\hypertarget{method-predictify}{}}}
-\subsection{Method \code{predictify()}}{
+\if{html}{\out{<a id="method-population_predict"></a>}}
+\if{latex}{\out{\hypertarget{method-population_predict}{}}}
+\subsection{Method \code{population_predict()}}{
 Use fitted model to add predicted probabilities to post-stratification dataset.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$predictify(fun = NULL, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$population_predict(fun = NULL, ...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{fun}}{The function to use to generate the predicted probabilities.
-This should only be specified if using a custom function, otherwise for
-\pkg{rstanarm} and \pkg{brms} models \code{posterior_epred()} is
-automatically used (with the result transposed) and for \pkg{lme4}
-models the \code{\link[=sim_posterior_epred]{sim_posterior_epred()}} is used. If \code{fun} is a custom
-function then the first argument should take in the fitted model object
-and the second argument should take in the poststratification
-(\code{newdata}) data frame. The function must return a matrix with rows
-corresponding to the columns of the poststratification data and columns
-corresponding to simulations.}
+This should only be specified if using a custom model fitting function.
+For models fit using \pkg{rstanarm}, \pkg{brms}, or \pkg{lme4}, \code{fun}
+is handled automatically. If \code{fun} is a custom function then the first
+argument should take in the fitted model object and the second argument
+should take in the poststratification (\code{newdata}) data frame. The
+function must return a matrix with rows corresponding to the columns of
+the poststratification data and columns corresponding to simulations.}
 
 \item{\code{...}}{Arguments other than the fitted model and \code{newdata} data frame
 to pass to \code{fun}.}
@@ -241,16 +245,16 @@ corresponding to posterior samples.
 \if{latex}{\out{\hypertarget{method-aggregate}{}}}
 \subsection{Method \code{aggregate()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$aggregate(poststrat_fit, by = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$aggregate(poststrat_estimates, by = NULL)}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-visify"></a>}}
-\if{latex}{\out{\hypertarget{method-visify}{}}}
-\subsection{Method \code{visify()}}{
+\if{html}{\out{<a id="method-plot"></a>}}
+\if{latex}{\out{\hypertarget{method-plot}{}}}
+\subsection{Method \code{plot()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$visify(sae_preds)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$plot(aggregated_estimates, weights = TRUE)}\if{html}{\out{</div>}}
 }
 
 }

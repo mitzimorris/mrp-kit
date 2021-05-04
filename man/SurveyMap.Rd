@@ -31,8 +31,7 @@ feline_prefs <- SurveyData$new(
     pet_own = levels(feline_survey$pet_own),
     y = c("no","yes")
   ),
-  weights = feline_survey$wt,
-  design = formula("~.")
+  weights = feline_survey$wt
 )
 feline_prefs$print()
 
@@ -51,12 +50,10 @@ popn_obj <- SurveyData$new(
     age2 = levels(approx_popn$age2),
     pet_pref = levels(approx_popn$pet_pref)
   ),
-  weights = approx_popn$wt,
-  design = formula("~.")
+  weights = approx_popn$wt
 )
 popn_obj$print()
 
-# mapping between the two surveys
 q1 <- SurveyQuestion$new(
   name = "age",
   col_names = c("age1","age2"),
@@ -125,21 +122,24 @@ fit_2 <- ex_map$fit(
 
 # predicted probabilities
 # returns matrix with rows for poststrat cells, cols for posterior draws
-poststrat_fit <- fit_1$predictify()
+poststrat_estimates <- fit_1$population_predict()
 
 # estimates by age level
-preds_by_age <- fit_1$aggregate(poststrat_fit, by = "age")
-head(preds_by_age)
-preds_by_age \%>\%
+estimates_by_age <- fit_1$aggregate(poststrat_estimates, by = "age")
+head(estimates_by_age)
+estimates_by_age \%>\%
   group_by(age) \%>\%
   summarize(mean = mean(value), sd = sd(value))
 
-(plot1 <- fit_1$visify(preds_by_age))
+# plot estimates by age
+fit_1$plot(estimates_by_age)
 
 # population estimate
-preds_popn <- fit_1$aggregate(poststrat_fit)
-mean(preds_popn$value)
-(plot2 <- fit_1$visify(preds_popn))
+estimates_popn <- fit_1$aggregate(poststrat_estimates)
+mean(estimates_popn$value)
+
+# plot population estimate
+fit_1$plot(estimates_popn)
 
 }
 \section{Methods}{
@@ -191,6 +191,13 @@ Print a summary of the mapping.
 \if{html}{\out{<div class="r">}}\preformatted{SurveyMap$print(...)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{Currently ignored.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-add"></a>}}
@@ -201,6 +208,13 @@ Add new \link{SurveyQuestion}s.
 \if{html}{\out{<div class="r">}}\preformatted{SurveyMap$add(...)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{The \link{SurveyQuestion}s to add.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-delete"></a>}}

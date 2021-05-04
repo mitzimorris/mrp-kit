@@ -125,7 +125,7 @@ The function `validate` is used on `SurveyMap` objects to assess whether the pro
 
 After the `SurveyMap` object has been validated then the function `mapping` is used to prepare it to be modelled.
 
-A model is fit to a `SurveyMap` object using the function `fit`. After a model has been fit it can be used to get MRP-based estimates using `predictify()`. And finally the estimates can be visualized using `visify()`.
+A model is fit to a `SurveyMap` object using the function `fit`. After a model has been fit it can be used to get MRP-based estimates using `population_predict()`. And finally the estimates can be visualized using `plot()`.
 
 
 
@@ -140,7 +140,7 @@ Having established both a survey dataset and a post-stratification dataset, a us
 
 The user now need to put these questions together and does this using `SurveyMap$new` and specifying the survey object, the post-stratification object, and the questions are to be used. A user can validate this map with `validate`, and potentially add additional questions using `add`, delete some existing ones using `delete`, or potentially replace a question using `replace`. Once a user is happy with the correspondence to be used they can establish a mapping using `mapping`.
 
-The relationship can then be modelled using `fit`. There are a variety of options that are available as built-into the package, including `rstanarm::stan_glmer`, and `brms::brm`. A user could also specify their own modelling approach if they wanted to. In any case, once a model has been fit to the survey dataset, it can be used to create estimates based on the post-stratification dataset with `predictify`, which takes a fitted model as an argument. Typically a user is interested in some type of high-level estimates, for instance on a province/state basis, and `collapsify` provides the functionality to do this. Finally, the estimates on that collapsed basis can be visualized with `visify`
+The relationship can then be modelled using `fit`. There are a variety of options that are available as built-into the package, including `rstanarm::stan_glmer`, and `brms::brm`. A user could also specify their own modelling approach if they wanted to. In any case, once a model has been fit to the survey dataset, it can be used to create estimates based on the post-stratification dataset with `population_predict`, which takes a fitted model as an argument. Typically a user is interested in some type of high-level estimates, for instance on a province/state basis, and `aggregate` provides the functionality to do this. Finally, the estimates on that collapsed basis can be visualized with `plot`
 
 
 

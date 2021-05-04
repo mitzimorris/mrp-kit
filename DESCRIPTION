@@ -13,7 +13,8 @@ RoxygenNote: 7.1.1
 Imports:
     dplyr,
     forcats,
-    ggplot2
+    ggplot2,
+    survey
 Suggests:
     testthat,
     rstanarm (>= 2.21.0),

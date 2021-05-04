@@ -71,7 +71,7 @@ SurveyQuestion <- R6::R6Class(
       private$name_ <- name
       private$col_names_ <- col_names
       private$values_ <- data.frame(names(values_map), as.character(unlist(values_map)),
-                                stringsAsFactors = TRUE)
+                                    stringsAsFactors = TRUE)
       if (sum(duplicated(private$values_)) > 0) {
         warning("Duplicated mapping in values, removing duplciates", call. = FALSE)
         private$values_ <- private$values_[!duplicated(private$values_), ]

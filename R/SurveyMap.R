@@ -30,8 +30,7 @@
 #'     pet_own = levels(feline_survey$pet_own),
 #'     y = c("no","yes")
 #'   ),
-#'   weights = feline_survey$wt,
-#'   design = formula("~.")
+#'   weights = feline_survey$wt
 #' )
 #' feline_prefs$print()
 #'
@@ -50,12 +49,10 @@
 #'     age2 = levels(approx_popn$age2),
 #'     pet_pref = levels(approx_popn$pet_pref)
 #'   ),
-#'   weights = approx_popn$wt,
-#'   design = formula("~.")
+#'   weights = approx_popn$wt
 #' )
 #' popn_obj$print()
 #'
-#' # mapping between the two surveys
 #' q1 <- SurveyQuestion$new(
 #'   name = "age",
 #'   col_names = c("age1","age2"),
@@ -124,21 +121,24 @@
 #'
 #' # predicted probabilities
 #' # returns matrix with rows for poststrat cells, cols for posterior draws
-#' poststrat_fit <- fit_1$predictify()
+#' poststrat_estimates <- fit_1$population_predict()
 #'
 #' # estimates by age level
-#' preds_by_age <- fit_1$aggregate(poststrat_fit, by = "age")
-#' head(preds_by_age)
-#' preds_by_age %>%
+#' estimates_by_age <- fit_1$aggregate(poststrat_estimates, by = "age")
+#' head(estimates_by_age)
+#' estimates_by_age %>%
 #'   group_by(age) %>%
 #'   summarize(mean = mean(value), sd = sd(value))
 #'
-#' (plot1 <- fit_1$visify(preds_by_age))
+#' # plot estimates by age
+#' fit_1$plot(estimates_by_age)
 #'
 #' # population estimate
-#' preds_popn <- fit_1$aggregate(poststrat_fit)
-#' mean(preds_popn$value)
-#' (plot2 <- fit_1$visify(preds_popn))
+#' estimates_popn <- fit_1$aggregate(poststrat_estimates)
+#' mean(estimates_popn$value)
+#'
+#' # plot population estimate
+#' fit_1$plot(estimates_popn)
 #'
 SurveyMap <- R6::R6Class(
   classname = "SurveyMap",
@@ -163,7 +163,7 @@ SurveyMap <- R6::R6Class(
       }
 
       private$item_map_ <- list(...)
-      for (i in 1:length(private$item_map_)) {
+      for (i in seq_along(private$item_map_)) {
         names(private$item_map_)[i] <- private$item_map_[[i]]$name()
       }
 
@@ -173,6 +173,7 @@ SurveyMap <- R6::R6Class(
     },
 
     #' @description Print a summary of the mapping.
+    #' @param ... Currently ignored.
     print = function(...) {
       if (length(private$item_map_) > 0) {
         for (i in 1:length(private$item_map_)) {
@@ -193,6 +194,7 @@ SurveyMap <- R6::R6Class(
     },
 
     #' @description Add new [SurveyQuestion]s.
+    #' @param ... The [SurveyQuestion]s to add.
     add = function(...) {
       dots <- list(...)
       for (i in 1:length(dots)) {
@@ -359,10 +361,10 @@ SurveyMap <- R6::R6Class(
         stop("At least one poststratification variable doesn't correspond to the map.", call. = FALSE)
       }
       private$poststrat_data_ <-
-          private$popn_obj_$mapped_data() %>%
-          dplyr::mutate(wts = private$popn_obj_$weights()) %>%
-          dplyr::group_by_at(dplyr::all_of(grouping_vars)) %>%
-          dplyr::summarize(N_j = sum(wts), .groups = 'drop')
+        private$popn_obj_$mapped_data() %>%
+        dplyr::mutate(wts = private$popn_obj_$weights()) %>%
+        dplyr::group_by_at(dplyr::all_of(grouping_vars)) %>%
+        dplyr::summarize(N_j = sum(wts), .groups = 'drop')
       invisible(self)
     },
 
@@ -424,5 +426,5 @@ SurveyMap <- R6::R6Class(
       }
       private$poststrat_data_
     }
-)
+  )
 )
