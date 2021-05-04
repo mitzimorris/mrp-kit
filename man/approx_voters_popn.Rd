@@ -3,15 +3,15 @@
 \docType{data}
 \name{approx_voters_popn}
 \alias{approx_voters_popn}
-\title{A Simulated Data of NLP Voters Approximate Population (Modelled after ACS)}
+\title{Simulated approximate population data for the NLP Voters survey (modeled after ACS)}
 \format{
 A data frame with columns:
 
 \describe{
 \item{age_group}{Age group}
 \item{gender}{Gender}
-\item{vote_for}{The party that being voted in the 2016 election}
-\item{education}{Highest grade of education that is completed}
+\item{vote_for}{Party voted for in the 2016 election}
+\item{education}{Highest grade of education completed}
 \item{state}{State}
 \item{wt}{Raked and trimmed survey weight}
 }
@@ -23,8 +23,7 @@ Created in NeverlandVoters.R
 approx_voters_popn
 }
 \description{
-This is a generated data shows the approximate population of the
-Neverland Labor Party (NLP) Survey to demonstrate the usage of the package.
+Simulated approximate population data for the NLP Voters survey (modeled after ACS)
 }
 \examples{
 

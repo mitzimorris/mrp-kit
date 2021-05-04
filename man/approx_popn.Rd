@@ -3,7 +3,7 @@
 \docType{data}
 \name{approx_popn}
 \alias{approx_popn}
-\title{Example approximate population (modelled after ACS)}
+\title{Example approximate population (modeled after ACS)}
 \format{
 A data frame with columns:
 \describe{
@@ -20,7 +20,7 @@ Created in CreateTestData.R
 approx_popn
 }
 \description{
-Example approximate population (modelled after ACS)
+Example approximate population (modeled after ACS)
 }
 \examples{
 
