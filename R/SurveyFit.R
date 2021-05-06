@@ -60,7 +60,7 @@ SurveyFit <- R6::R6Class(
     #'
     population_predict = function(fun = NULL, ...) {
       args <- list(...)
-      if (!is.null(args$newdata)) {
+      if (!is.null(args$newdata) && is.null(fun)) {
         stop("The 'newdata' argument should not be specified.",
              call. = FALSE)
       }
@@ -71,7 +71,7 @@ SurveyFit <- R6::R6Class(
       }
       poststrat <- private$map_$poststrat_data()
 
-      if (is.null(args$fun)) {
+      if (is.null(fun)) {
         if ("stanreg" %in% class(private$fit_)){
           require_suggested_package("rstanarm", "2.21.0")
           return(
