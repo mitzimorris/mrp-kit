@@ -140,6 +140,13 @@
 #' # plot population estimate
 #' fit_1$plot(estimates_popn)
 #'
+#' # summarize MRP estimates
+#' fit_1$summary()
+#' fit_1$summary(by = "age", digits = 2)
+#'
+#' # summarize fitted model
+#' summary(fit_1$fit())
+#'
 SurveyMap <- R6::R6Class(
   classname = "SurveyMap",
   private = list(

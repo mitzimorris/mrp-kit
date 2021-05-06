@@ -137,6 +137,13 @@ mean(estimates_popn$value)
 # plot population estimate
 fit_1$plot(estimates_popn)
 
+# summarize MRP estimates
+fit_1$summary()
+fit_1$summary(by = "age", digits = 2)
+
+# summarize fitted model
+summary(fit_1$fit())
+
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -148,6 +155,7 @@ fit_1$plot(estimates_popn)
 \item \href{#method-population_predict}{\code{SurveyFit$population_predict()}}
 \item \href{#method-aggregate}{\code{SurveyFit$aggregate()}}
 \item \href{#method-plot}{\code{SurveyFit$plot()}}
+\item \href{#method-summary}{\code{SurveyFit$summary()}}
 \item \href{#method-clone}{\code{SurveyFit$clone()}}
 }
 }
@@ -257,6 +265,41 @@ corresponding to posterior samples.
 \if{html}{\out{<div class="r">}}\preformatted{SurveyFit$plot(aggregated_estimates, weights = TRUE)}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-summary"></a>}}
+\if{latex}{\out{\hypertarget{method-summary}{}}}
+\subsection{Method \code{summary()}}{
+Summarize MRP estimates. To instead summarize the
+fitted model itself first extract it using the \code{fit} method and then
+call \code{summary}, e.g. \code{summary(SurveyFit$fit())}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$summary(poststrat_estimates, by = NULL, ...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{poststrat_estimates}}{Optionally, the object returned by
+\code{population_predict} method. If not provided this is regenerated
+internally which may take some time depending on the size of the model
+and data.}
+
+\item{\code{by}}{Optionally, a character vector of variable names. If not
+specified only the population estimate will be summarized.}
+
+\item{\code{...}}{Arguments passed to \code{print}, e.g. \code{digits}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A named list containing the following components:
+\itemize{
+\item \code{population}: data frame with one row and columns \code{mean} and \code{sd}
+\item \code{grouped}: data frame with a column for the level of the grouping
+variable and also columns \code{mean} and \code{sd}.
+}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-clone"></a>}}

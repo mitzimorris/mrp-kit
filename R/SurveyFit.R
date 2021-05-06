@@ -181,6 +181,60 @@ SurveyFit <- R6::R6Class(
         }
       }
       gg
+    },
+
+    #' @description Summarize MRP estimates. To instead summarize the
+    #'   fitted model itself first extract it using the `fit` method and then
+    #'   call `summary`, e.g. `summary(SurveyFit$fit())`.
+    #' @param poststrat_estimates Optionally, the object returned by
+    #'   `population_predict` method. If not provided this is regenerated
+    #'   internally which may take some time depending on the size of the model
+    #'   and data.
+    #' @param by Optionally, a character vector of variable names. If not
+    #'   specified only the population estimate will be summarized.
+    #' @param ... Arguments passed to `print`, e.g. `digits`.
+    #' @return A named list containing the following components:
+    #'   * `population`: data frame with one row and columns `mean` and `sd`
+    #'   * `grouped`: data frame with a column for the level of the grouping
+    #'   variable and also columns `mean` and `sd`.
+    summary = function(poststrat_estimates, by = NULL, ...) {
+      if (missing(poststrat_estimates)) {
+        poststrat_estimates <- self$population_predict()
+      }
+      popn_ests <- self$aggregate(poststrat_estimates)
+      popn_summary <- data.frame(
+        mean = mean(popn_ests$value),
+        sd = stats::sd(popn_ests$value)
+      )
+      if (!is.null(by)) {
+        group_ests <- self$aggregate(poststrat_estimates, by = by)
+        group_summary <-
+          group_ests %>%
+          dplyr::group_by(.data[[by]]) %>%
+          dplyr::summarise(mean = mean(.data$value), sd = stats::sd(.data$value))
+        group_summary <- as.data.frame(group_summary)
+      } else {
+        group_summary <- NULL
+      }
+      structure(
+        list(population = popn_summary, grouped = group_summary),
+        class = c("mrp_summary", "list"),
+        ...
+      )
     }
   )
 )
+
+#' @export
+print.mrp_summary <- function(x, ...) {
+  dots <- list(...)
+  atts <- attributes(x)
+  cat("\nPopulation estimate:\n")
+  print(x$population, digits = dots$digits %||% atts$digits, ...)
+
+  if (!is.null(x$grouped)) {
+    cat("\nEstimates by group:\n")
+    print(x$grouped, digits = dots$digits %||% atts$digits, ...)
+  }
+  invisible(x)
+}

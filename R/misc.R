@@ -1,3 +1,7 @@
+`%||%` <- function (a, b) {
+  if (is.null(a) || isTRUE(is.na(a))) b else a
+}
+
 require_suggested_package <- function(pkg, ver = NULL) {
   if (!requireNamespace(pkg, quietly = TRUE) ||
       (!is.null(ver) && utils::packageVersion(pkg) < ver)) {
