@@ -272,7 +272,8 @@ corresponding to posterior samples.
 \subsection{Method \code{summary()}}{
 Summarize MRP estimates. To instead summarize the
 fitted model itself first extract it using the \code{fit} method and then
-call \code{summary}, e.g. \code{summary(SurveyFit$fit())}.
+use \code{summary} to call the method from the package that fit the model,
+i.e., \code{summary(SurveyFit$fit())}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SurveyFit$summary(poststrat_estimates, by = NULL, ...)}\if{html}{\out{</div>}}
 }
@@ -280,13 +281,18 @@ call \code{summary}, e.g. \code{summary(SurveyFit$fit())}.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{poststrat_estimates}}{Optionally, the object returned by
+\item{\code{poststrat_estimates}}{The object returned by the
 \code{population_predict} method. If not provided this is regenerated
-internally which may take some time depending on the size of the model
-and data.}
+internally which may take some time for very large models and data. For
+models that require a custom \code{population_predict} method (models not
+fit using \pkg{rstanarm}, \pkg{brms}, or \pkg{lme4})
+\code{poststrat_estimates} can't be automatically regenerated and so the
+argument must be specified.}
 
 \item{\code{by}}{Optionally, a character vector of variable names. If not
-specified only the population estimate will be summarized.}
+specified only the population estimate will be summarized. If specified
+then estimates for each level of the variable in \code{by} will be
+summarized.}
 
 \item{\code{...}}{Arguments passed to \code{print}, e.g. \code{digits}.}
 }
@@ -295,7 +301,7 @@ specified only the population estimate will be summarized.}
 \subsection{Returns}{
 A named list containing the following components:
 \itemize{
-\item \code{population}: data frame with one row and columns \code{mean} and \code{sd}
+\item \code{population}: data frame with one row and columns \code{mean} and \code{sd}.
 \item \code{grouped}: data frame with a column for the level of the grouping
 variable and also columns \code{mean} and \code{sd}.
 }
