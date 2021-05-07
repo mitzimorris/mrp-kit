@@ -241,28 +241,49 @@ This should only be specified if using a custom model fitting function.
 For models fit using \pkg{rstanarm}, \pkg{brms}, or \pkg{lme4}, \code{fun}
 is handled automatically. If \code{fun} is a custom function then the first
 argument should take in the fitted model object and the second argument
-should take in the poststratification (\code{newdata}) data frame. The
+should take in the poststratification data frame. The
 function must return a matrix with rows corresponding to the columns of
 the poststratification data and columns corresponding to simulations.}
 
-\item{\code{...}}{Arguments other than the fitted model and \code{newdata} data frame
-to pass to \code{fun}.}
+\item{\code{...}}{Arguments other than the fitted model and poststratification
+data frame to pass to \code{fun}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A matrix with rows corresponding to poststrat cells and columns
-corresponding to posterior samples.
+A matrix with rows corresponding to poststratification cells and
+columns corresponding to posterior samples (or approximate ones
+in the case of \pkg{lme4} models).
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-aggregate"></a>}}
 \if{latex}{\out{\hypertarget{method-aggregate}{}}}
 \subsection{Method \code{aggregate()}}{
+Aggregate estimates to the population level or by level of a grouping variable
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SurveyFit$aggregate(poststrat_estimates, by = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{poststrat_estimates}}{The object returned by \code{population_predict}.}
+
+\item{\code{by}}{Optionally a string specifying a grouping variable. If
+specified the aggregation will happen by level of the named variable.
+If not specified population-level estimates will be computed.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A data frame. If \code{by} is not specified then the data frame will
+have number of rows equal to the number of posterior draws. If \code{by} is
+specified the data frame will have number of rows equal to the number
+of posterior draws times the number of levels of the \code{by} variable,
+and there will be an extra column indicating which level of the \code{by}
+variable each row corresponds to.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-plot"></a>}}

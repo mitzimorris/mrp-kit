@@ -50,13 +50,14 @@ SurveyFit <- R6::R6Class(
     #'   For models fit using \pkg{rstanarm}, \pkg{brms}, or \pkg{lme4}, `fun`
     #'   is handled automatically. If `fun` is a custom function then the first
     #'   argument should take in the fitted model object and the second argument
-    #'   should take in the poststratification (`newdata`) data frame. The
+    #'   should take in the poststratification data frame. The
     #'   function must return a matrix with rows corresponding to the columns of
     #'   the poststratification data and columns corresponding to simulations.
-    #' @param ... Arguments other than the fitted model and `newdata` data frame
-    #'   to pass to `fun`.
-    #' @return A matrix with rows corresponding to poststrat cells and columns
-    #'   corresponding to posterior samples.
+    #' @param ... Arguments other than the fitted model and poststratification
+    #'   data frame to pass to `fun`.
+    #' @return A matrix with rows corresponding to poststratification cells and
+    #'   columns corresponding to posterior samples (or approximate ones
+    #'   in the case of \pkg{lme4} models).
     #'
     population_predict = function(fun = NULL, ...) {
       args <- list(...)
@@ -113,6 +114,18 @@ SurveyFit <- R6::R6Class(
         fun(fitted_model, poststrat, ...)
       }
     },
+
+    #' @description Aggregate estimates to the population level or by level of a grouping variable
+    #' @param poststrat_estimates The object returned by `population_predict`.
+    #' @param by Optionally a string specifying a grouping variable. If
+    #'   specified the aggregation will happen by level of the named variable.
+    #'   If not specified population-level estimates will be computed.
+    #' @return A data frame. If `by` is not specified then the data frame will
+    #'   have number of rows equal to the number of posterior draws. If `by` is
+    #'   specified the data frame will have number of rows equal to the number
+    #'   of posterior draws times the number of levels of the `by` variable,
+    #'   and there will be an extra column indicating which level of the `by`
+    #'   variable each row corresponds to.
     aggregate = function(poststrat_estimates, by = NULL) {
       poststrat_data <- private$map_$poststrat_data()
       if (!is.null(by)) {
