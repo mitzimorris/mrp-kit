@@ -210,7 +210,9 @@ SurveyFit <- R6::R6Class(
       if (missing(population_estimates)) {
         poststrat_estimates <- self$population_predict()
         population_estimates <- self$aggregate(poststrat_estimates)
-      } else if (!inherits(population_estimates, "mrp_aggregate")) {
+      } else if (!inherits(population_estimates, "mrp_aggregate") ||
+                 !is.data.frame(population_estimates) ||
+                 !identical(colnames(population_estimates), "value")) {
         stop("If specified 'population_estimates' must be a data frame returned ",
              "by the aggregate method.", call. = FALSE)
       }
@@ -219,12 +221,14 @@ SurveyFit <- R6::R6Class(
         if (is.data.frame(group_estimates)) {
           group_estimates <- list(group_estimates)
         }
-        if (!all(sapply(group_estimates, inherits, "mrp_aggregate"))) {
+        if (!all(sapply(group_estimates, inherits, "mrp_aggregate")) ||
+            !all(sapply(group_estimates, is.data.frame))) {
           stop("If specified 'group_estimates' must be a data frame returned ",
                "by the aggregate method or a list of such data frames.", call. = FALSE)
         }
         if (!is.null(by)) {
           warning("'by' is ignored if 'group_estimates' is specified.", call. = FALSE)
+          by <- NULL
         }
       } else if (!is.null(by)) {
         if (is.null(poststrat_estimates)) {

@@ -124,15 +124,16 @@ fit_2 <- ex_map$fit(
 # returns matrix with rows for poststrat cells, cols for posterior draws
 poststrat_estimates <- fit_1$population_predict()
 
-# estimates by age level
+# estimates by age and gender
 estimates_by_age <- fit_1$aggregate(poststrat_estimates, by = "age")
 head(estimates_by_age)
-estimates_by_age \%>\%
-  group_by(age) \%>\%
-  summarize(mean = mean(value), sd = sd(value))
 
-# plot estimates by age
+estimates_by_gender <- fit_1$aggregate(poststrat_estimates, by = "gender")
+head(estimates_by_gender)
+
+# plot estimates by age and gender
 fit_1$plot(estimates_by_age)
+fit_1$plot(estimates_by_gender)
 
 # population estimate
 estimates_popn <- fit_1$aggregate(poststrat_estimates)
@@ -141,11 +142,17 @@ mean(estimates_popn$value)
 # plot population estimate
 fit_1$plot(estimates_popn)
 
-# summarize MRP estimates
-fit_1$summary()
-fit_1$summary(by = "age", digits = 2)
+# summarize MRP estimates numerically
+fit_1$summary(digits = 1)
+fit_1$summary(by = c("age", "gender"), digits = 1)
 
-# summarize fitted model
+# summarize MRP estimates using precomputed aggregated estimates
+# this is much faster for large models/data
+fit_1$summary(estimates_popn, digits = 1)
+fit_1$summary(estimates_popn, estimates_by_age, digits = 1)
+fit_1$summary(estimates_popn, list(estimates_by_age, estimates_by_gender), digits = 1)
+
+# summarize fitted model itself (not the MRP estimates)
 summary(fit_1$fit())
 
 }
