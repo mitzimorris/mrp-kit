@@ -130,7 +130,7 @@ SurveyFit <- R6::R6Class(
       } else {
         out <- data.frame(value = apply(poststrat_estimates, 2, function(x) sum(poststrat_data$N_j*x)/sum(poststrat_data$N_j)))
       }
-      out
+      structure(out, class = c(class(out), "mrp_aggregate"))
     },
 
     plot = function(aggregated_estimates, weights = TRUE) {
@@ -187,46 +187,68 @@ SurveyFit <- R6::R6Class(
     #'   fitted model itself first extract it using the `fit` method and then
     #'   use `summary` to call the method from the package that fit the model,
     #'   i.e., `summary(SurveyFit$fit())`.
-    #' @param poststrat_estimates The object returned by the
-    #'   `population_predict` method. If not provided this is regenerated
-    #'   internally which may take some time for very large models and data. For
-    #'   models that require a custom `population_predict` method (models not
-    #'   fit using \pkg{rstanarm}, \pkg{brms}, or \pkg{lme4})
-    #'   `poststrat_estimates` can't be automatically regenerated and so the
-    #'   argument must be specified.
-    #' @param by Optionally, a character vector of variable names. If not
-    #'   specified only the population estimate will be summarized. If specified
-    #'   then estimates for each level of the variable in `by` will be
-    #'   summarized.
+    #' @param population_estimates Optionally, population estimates returned by
+    #'   the `aggregate` method. If not provided this is regenerated internally,
+    #'   which may be slow for large models and data.
+    #' @param group_estimates Optionally, group estimates returned by the
+    #'   `aggregate` method. This can be a single data frame returned by
+    #'   `aggregate` or a list of such data frame (to summarize by multiple
+    #'   different variables). If not provided this is regenerated internally
+    #'   (if `by` is specified), which may be slow for large models and data.
+    #' @param by Character vector of variable names. If `group_estimates` is not
+    #'   provided then `by` is used to specify which variables to summarize by.
     #' @param ... Arguments passed to `print`, e.g. `digits`.
     #' @return A named list containing the following components:
-    #'   * `population`: data frame with one row and columns `mean` and `sd`.
-    #'   * `grouped`: data frame with a column for the level of the grouping
-    #'   variable and also columns `mean` and `sd`.
-    summary = function(poststrat_estimates, by = NULL, ...) {
-      if (missing(poststrat_estimates)) {
+    #'   * `population`: A data frame with one row and columns `mean` and `sd`.
+    #'   * `grouped`: A list with one data frame per grouping variable. Each
+    #'   data frame has a column for the level of the grouping variable and also
+    #'   columns `mean` and `sd`.
+    #'
+    #'   The list has an extra class `"mrp_summary"` with a custom `print` method.
+    summary = function(population_estimates, group_estimates, ..., by = NULL) {
+      poststrat_estimates <- NULL
+      if (missing(population_estimates)) {
         poststrat_estimates <- self$population_predict()
+        population_estimates <- self$aggregate(poststrat_estimates)
+      } else if (!inherits(population_estimates, "mrp_aggregate")) {
+        stop("If specified 'population_estimates' must be a data frame returned ",
+             "by the aggregate method.", call. = FALSE)
       }
-      popn_ests <- self$aggregate(poststrat_estimates)
-      popn_summary <- data.frame(
-        mean = mean(popn_ests$value),
-        sd = stats::sd(popn_ests$value)
+
+      if (!missing(group_estimates)) {
+        if (is.data.frame(group_estimates)) {
+          group_estimates <- list(group_estimates)
+        }
+        if (!all(sapply(group_estimates, inherits, "mrp_aggregate"))) {
+          stop("If specified 'group_estimates' must be a data frame returned ",
+               "by the aggregate method or a list of such data frames.", call. = FALSE)
+        }
+        if (!is.null(by)) {
+          warning("'by' is ignored if 'group_estimates' is specified.", call. = FALSE)
+        }
+      } else if (!is.null(by)) {
+        if (is.null(poststrat_estimates)) {
+          poststrat_estimates <- self$population_predict()
+        }
+        group_estimates <- lapply(by, function(x) self$aggregate(poststrat_estimates, by = x))
+      } else {
+        group_estimates <- list()
+      }
+
+      population_summary <- data.frame(
+        mean = mean(population_estimates$value),
+        sd = stats::sd(population_estimates$value)
       )
-      if (!is.null(by)) {
-        group_ests <- self$aggregate(poststrat_estimates, by = by)
-        group_summary <-
-          group_ests %>%
-          dplyr::group_by(.data[[by]]) %>%
+      group_summary <- lapply(seq_along(group_estimates), function(j) {
+        by_var <- colnames(group_estimates[[j]])[1]
+        group_estimates[[j]] %>%
+          dplyr::group_by(.data[[by_var]]) %>%
           dplyr::summarise(mean = mean(.data$value), sd = stats::sd(.data$value)) %>%
           as.data.frame()
-      } else {
-        group_summary <- NULL
-      }
-      structure(
-        list(population = popn_summary, grouped = group_summary),
-        class = c("mrp_summary", "list"),
-        ...
-      )
+      })
+      names(group_summary) <- sapply(group_summary, function(x) colnames(x)[1])
+      out <- list(population = population_summary, grouped = group_summary)
+      structure(out, class = c(class(out), "mrp_summary"), ...)
     }
   )
 )
@@ -234,14 +256,18 @@ SurveyFit <- R6::R6Class(
 # Print method for objects generated by SurveyFit$summary()
 #' @export
 print.mrp_summary <- function(x, ...) {
-  dots <- list(...)
-  atts <- attributes(x)
-  cat("\nPopulation estimate:\n")
-  print(x$population, row.names = FALSE, digits = dots$digits %||% atts$digits, ...)
+  args <- list(...)
+  args$digits <- args$digits %||% attributes(x)$digits
+  args$row.names <- args$row.names %||% FALSE
 
-  if (!is.null(x$grouped)) {
-    cat("\nEstimates by group:\n")
-    print(x$grouped, row.names = FALSE, digits = dots$digits %||% atts$digits, ...)
+  cat("\nPopulation estimate:\n")
+  args$x <- x$population
+  do.call(print, args)
+
+  for (j in seq_along(x$grouped)) {
+    cat("\nEstimates by ", names(x$grouped)[j], ":\n", sep = "")
+    args$x <- x$grouped[[j]]
+    do.call(print, args)
   }
   invisible(x)
 }

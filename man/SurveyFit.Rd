@@ -275,36 +275,39 @@ fitted model itself first extract it using the \code{fit} method and then
 use \code{summary} to call the method from the package that fit the model,
 i.e., \code{summary(SurveyFit$fit())}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$summary(poststrat_estimates, by = NULL, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$summary(population_estimates, group_estimates, ..., by = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{poststrat_estimates}}{The object returned by the
-\code{population_predict} method. If not provided this is regenerated
-internally which may take some time for very large models and data. For
-models that require a custom \code{population_predict} method (models not
-fit using \pkg{rstanarm}, \pkg{brms}, or \pkg{lme4})
-\code{poststrat_estimates} can't be automatically regenerated and so the
-argument must be specified.}
+\item{\code{population_estimates}}{Optionally, population estimates returned by
+the \code{aggregate} method. If not provided this is regenerated internally,
+which may be slow for large models and data.}
 
-\item{\code{by}}{Optionally, a character vector of variable names. If not
-specified only the population estimate will be summarized. If specified
-then estimates for each level of the variable in \code{by} will be
-summarized.}
+\item{\code{group_estimates}}{Optionally, group estimates returned by the
+\code{aggregate} method. This can be a single data frame returned by
+\code{aggregate} or a list of such data frame (to summarize by multiple
+different variables). If not provided this is regenerated internally
+(if \code{by} is specified), which may be slow for large models and data.}
 
 \item{\code{...}}{Arguments passed to \code{print}, e.g. \code{digits}.}
+
+\item{\code{by}}{Character vector of variable names. If \code{group_estimates} is not
+provided then \code{by} is used to specify which variables to summarize by.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 A named list containing the following components:
 \itemize{
-\item \code{population}: data frame with one row and columns \code{mean} and \code{sd}.
-\item \code{grouped}: data frame with a column for the level of the grouping
-variable and also columns \code{mean} and \code{sd}.
+\item \code{population}: A data frame with one row and columns \code{mean} and \code{sd}.
+\item \code{grouped}: A list with one data frame per grouping variable. Each
+data frame has a column for the level of the grouping variable and also
+columns \code{mean} and \code{sd}.
 }
+
+The list has an extra class \code{"mrp_summary"} with a custom \code{print} method.
 }
 }
 \if{html}{\out{<hr>}}

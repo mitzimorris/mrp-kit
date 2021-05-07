@@ -88,7 +88,7 @@ sim_posterior_probs  <- function(object, newdata, nsamples = 4000) {
   predict_nd <-
     merTools::predictInterval(
       merMod = object,
-      newdata = newdata,
+      newdata = as.data.frame(newdata),
       level = 0.95,
       n.sims = nsamples,
       stat = "median",
