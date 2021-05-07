@@ -196,10 +196,19 @@ SurveyFit <- R6::R6Class(
       gg
     },
 
-    #' @description Summarize MRP estimates. To instead summarize the
-    #'   fitted model itself first extract it using the `fit` method and then
-    #'   use `summary` to call the method from the package that fit the model,
-    #'   i.e., `summary(SurveyFit$fit())`.
+    #' @description Summarize MRP estimates.
+    #' @details This method summarizes the MRP estimates and not the fitted
+    #'   model. To instead summarize just the fitted model first extract
+    #'   it using the `fit` method and then use `summary` to call the method
+    #'   from the package that fit the model, i.e., `summary(SurveyFit$fit())`.
+    #'
+    #'   The efficiency of this method depends greatly on whether
+    #'   `population_estimates` and `group_estimates` are specified by the user
+    #'   or whether they are unspecified and thus must be computed internally.
+    #'   If they are not specified then both the `population_predict` and
+    #'   `aggregate` methods will be called to produce the necessary estimates
+    #'   to summarize.
+    #'
     #' @param population_estimates Optionally, population estimates returned by
     #'   the `aggregate` method. If not provided this is regenerated internally,
     #'   which may be slow for large models and data.
@@ -211,6 +220,7 @@ SurveyFit <- R6::R6Class(
     #' @param by Character vector of variable names. If `group_estimates` is not
     #'   provided then `by` is used to specify which variables to summarize by.
     #' @param ... Arguments passed to `print`, e.g. `digits`.
+    #'
     #' @return A named list containing the following components:
     #'   * `population`: A data frame with one row and columns `mean` and `sd`.
     #'   * `grouped`: A list with one data frame per grouping variable. Each

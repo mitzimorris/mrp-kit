@@ -298,10 +298,7 @@ variable each row corresponds to.
 \if{html}{\out{<a id="method-summary"></a>}}
 \if{latex}{\out{\hypertarget{method-summary}{}}}
 \subsection{Method \code{summary()}}{
-Summarize MRP estimates. To instead summarize the
-fitted model itself first extract it using the \code{fit} method and then
-use \code{summary} to call the method from the package that fit the model,
-i.e., \code{summary(SurveyFit$fit())}.
+Summarize MRP estimates.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SurveyFit$summary(population_estimates, group_estimates, ..., by = NULL)}\if{html}{\out{</div>}}
 }
@@ -326,6 +323,20 @@ provided then \code{by} is used to specify which variables to summarize by.}
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+This method summarizes the MRP estimates and not the fitted
+model. To instead summarize just the fitted model first extract
+it using the \code{fit} method and then use \code{summary} to call the method
+from the package that fit the model, i.e., \code{summary(SurveyFit$fit())}.
+
+The efficiency of this method depends greatly on whether
+\code{population_estimates} and \code{group_estimates} are specified by the user
+or whether they are unspecified and thus must be computed internally.
+If they are not specified then both the \code{population_predict} and
+\code{aggregate} methods will be called to produce the necessary estimates
+to summarize.
+}
+
 \subsection{Returns}{
 A named list containing the following components:
 \itemize{
