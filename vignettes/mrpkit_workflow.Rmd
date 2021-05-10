@@ -26,7 +26,7 @@ This vignette presents the typical workflow of `mrpkit`, an R package for implem
 
 The aim of `mrpkit` is to use a grammar to perform multilevel regression with post-stratification (MRP). By using this package, you follow a specific workflow of MRP from creating the metadata of the survey and post-stratification objects, mapping these objects to each other, fitting the model, getting predictions, aggregating values, and visualizing the results. Hence, it creates a more reproducible and accountable environment for conducting MRP.
 
-Unlike many R packages, `mrpkit` uses [Object Oriented Programming (R6 objects)](https://adv-r.hadley.nz/r6.html) (Chang, 2019). Thus, instead of calling a function to perform a task, we call a method that is embedded to an object using `object$method`. Typical usage of this package will create four objects: `SurveyData`, `SurveyQuestion`, `SurveyMap`, and `SurveyFit`. There are several methods in each of these objects that will be explained later in this vignette.   
+Unlike many R packages, `mrpkit` uses [R6 objects](https://adv-r.hadley.nz/r6.html) (Chang, 2019). Thus, instead of calling a function to perform a task, we call a method that is embedded to an object using `object$method`. Typical usage of this package will create four objects: `SurveyData`, `SurveyQuestion`, `SurveyMap`, and `SurveyFit`. There are several methods in each of these objects that will be explained later in this vignette.   
 
 
 # Workflow
