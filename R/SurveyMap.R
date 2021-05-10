@@ -15,66 +15,92 @@
 #' @examples
 #' library(dplyr)
 #'
-#' head(feline_survey)
-#' feline_prefs <- SurveyData$new(
-#'   data = feline_survey,
+#' head(nlp_survey)
+#' nlp_prefs <- SurveyData$new(
+#'   data = nlp_prefs,
 #'   questions = list(
-#'     age1 = "Please identify your age group",
+#'     age = "Please identify your age group",
 #'     gender = "Please select your gender",
-#'     pet_own = "Which pet do you own?",
-#'     y = "Response"
+#'     vote_for = "Which party did you vote for in the 2018 election?",
+#'     highest_educ = "Please identify your completed highest education",
+#'     state = "Please identify the state do you live in"
+#'     y = "Will you vote for the NLP if today is the election day?"
 #'   ),
 #'   responses = list(
-#'     age1 = levels(feline_survey$age1),
-#'     gender = levels(feline_survey$gender),
-#'     pet_own = levels(feline_survey$pet_own),
+#'     age = levels(nlp_survey$age),
+#'     gender = levels(nlp_survey$gender),
+#'     vote_for = levels(nlp_survey$vote_for),
+#'     highest_educ = levels(nlp_survey$highest_educ),
+#'     state = levels(nlp_survey$state),
 #'     y = c("no","yes")
 #'   ),
-#'   weights = feline_survey$wt
+#'   weights = nlp_survey$wt,
+#'   design = list(ids =~1)
 #' )
-#' feline_prefs$print()
+#' nlp_prefs$print()
 #'
-#' head(approx_popn)
+#' head(approx_voters_popn)
 #' popn_obj <- SurveyData$new(
-#'   data = approx_popn,
+#'   data = approx_voters_popn,
 #'   questions = list(
-#'     age2 = "Which age group are you?",
+#'     age_group = "Which age group are you?",
 #'     gender = "Gender?",
-#'     pet_pref = "Which pet would you like to own?"
+#'     vote_pref = "Which party do you prefer to vote for?",
+#'     education = "What is your highest grade completed?",
+#'     state = "Which state do you live in?"
 #'   ),
 #'   # order doesn't matter (gender before age2 here) because
 #'   # the list has the names of the variables
 #'   responses = list(
-#'     gender = levels(approx_popn$gender),
-#'     age2 = levels(approx_popn$age2),
-#'     pet_pref = levels(approx_popn$pet_pref)
+#'     gender = levels(approx_voters_popn$gender),
+#'     age_group = levels(approx_voters_popn$age_group),
+#'     vote_pref = levels(approx_voters_popn$vote_pref),
+#'     education = levels(approx_voters_popn$education),
+#'     state = levels(approx_voters_popn$state)
 #'   ),
-#'   weights = approx_popn$wt
+#'   weights = approx_voters_popn$wt
 #' )
 #' popn_obj$print()
 #'
 #' q1 <- SurveyQuestion$new(
 #'   name = "age",
-#'   col_names = c("age1","age2"),
+#'   col_names = c("age","age_group"),
 #'   values_map = list(
 #'     "18-25" = "18-35", "26-35" = "18-35","36-45" = "36-55",
 #'     "46-55" = "36-55", "56-65" = "56-65", "66-75" = "66+", "76-90" = "66+"
 #'   )
 #' )
+#' print(q1)
+#'
 #' q2 <- SurveyQuestion$new(
-#'   name = "pet",
-#'   col_names = c("pet_own","pet_pref"),
-#'   values_map = list("cat" = "cat", "kitten" = "cat","dog" = "dog","puppy" = "dog")
+#'   name = "party_pref",
+#'   col_names = c("vote_for","vote_pref"),
+#'   values_map = list("Neverland Labor Party" = "NLP", "NLP" = "NLP","Neverland Democrats" = "The Democrats","The Democrats" = "The Democrats")
 #' )
 #' q3 <- SurveyQuestion$new(
 #'   name = "gender",
-#'   col_names = c("gender","gender"),
-#'   values_map = data.frame("male" = "m","female" = "f", "nonbinary" = "nb")
+#'   col_names = c("gender", "gender"),
+#'   values_map = list("male" = "m","female" = "f", "nonbinary" = "nb")
+#' )
+#' q4 <- SurveyQuestion$new(
+#'   name = "highest_education",
+#'   col_names = c("highest_educ", "education"),
+#'   values_map = list("no high school" = "no high school",
+#'                     "high school" = "high school",
+#'                     "some college" = "some college",
+#'                     "4-year college" = "4-year college",
+#'                     "post-graduate" = "post-grad")
+#' )
+#' q5 <- SurveyQuestion$new(
+#'   name = "state",
+#'   col_names = c("state", "state"),
+#'   values_map = list("State A" = "A", "State B" = "B", "State C" = "C",
+#'                     "State D" = "D", "State E" = "E")
 #' )
 #'
 #' # Create SurveyMap object
 #' # can add all questions at once or incrementally
-#' ex_map <- SurveyMap$new(samp_obj = feline_prefs, popn_obj = popn_obj, q1)
+#' ex_map <- SurveyMap$new(samp_obj = nlp_prefs, popn_obj = popn_obj, q1)
 #' print(ex_map)
 #' ex_map$validate()
 #' ex_map$add(q3)
