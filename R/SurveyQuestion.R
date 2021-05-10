@@ -9,7 +9,7 @@
 #' @examples
 #' q1 <- SurveyQuestion$new(
 #'   name = "age",
-#'   col_names = c("age1","age2"),
+#'   col_names = c("age","age_group"),
 #'   values_map = list(
 #'     "18-25" = "18-35", "26-35" = "18-35","36-45" = "36-55",
 #'     "46-55" = "36-55", "56-65" = "56-65", "66-75" = "66+", "76-90" = "66+"
@@ -18,16 +18,30 @@
 #' print(q1)
 #'
 #' q2 <- SurveyQuestion$new(
-#'   name = "pet",
-#'   col_names = c("pet_pref","pet_own"),
-#'   values_map = list("cat" = "cat", "kitten" = "cat","dog" = "dog","dog" = "puppy")
+#'   name = "party_pref",
+#'   col_names = c("vote_for","vote_pref"),
+#'   values_map = list("Neverland Labor Party" = "NLP", "NLP" = "NLP","Neverland Democrats" = "The Democrats","The Democrats" = "The Democrats")
 #' )
 #' q3 <- SurveyQuestion$new(
 #'   name = "gender",
 #'   col_names = c("gender", "gender"),
 #'   values_map = list("male" = "m","female" = "f", "nonbinary" = "nb")
 #' )
-#'
+#' q4 <- SurveyQuestion$new(
+#'   name = "highest_education",
+#'   col_names = c("highest_educ", "education"),
+#'   values_map = list("no high school" = "no high school",
+#'                     "high school" = "high school",
+#'                     "some college" = "some college",
+#'                     "4-year college" = "4-year college",
+#'                     "post-graduate" = "post-grad")
+#' )
+#' q5 <- SurveyQuestion$new(
+#'   name = "state",
+#'   col_names = c("state", "state"),
+#'   values_map = list("State A" = "A", "State B" = "B", "State C" = "C",
+#'                     "State D" = "D", "State E" = "E")
+#' )
 SurveyQuestion <- R6::R6Class(
   classname = "SurveyQuestion",
   private = list(
