@@ -304,7 +304,13 @@ variable each row corresponds to.
 \subsection{Method \code{summary()}}{
 Summarize MRP estimates.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$summary(population_estimates, group_estimates, ..., by = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$summary(
+  population_estimates,
+  group_estimates,
+  ...,
+  by = NULL,
+  stats = list("mean", "sd")
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -324,6 +330,15 @@ different variables). If not provided this is regenerated internally
 
 \item{\code{by}}{Character vector of variable names. If \code{group_estimates} is not
 provided then \code{by} is used to specify which variables to summarize by.}
+
+\item{\code{stats}}{A named list of univariate functions to compute. The list
+names are used as column names in the summarized output. The list values
+must be names of functions of functions themselves. For example:\preformatted{stats = list("mean", "std_dev" = sd, p70 = function(x) quantile(x, 0.7))
+}
+
+will result in computing the mean (labelled "mean" in output, inferred because
+the function name was given as a string), the standard deviation (labelled "std_dev"
+in the output) and the 70th percentile (labelled "p70" in the output).}
 }
 \if{html}{\out{</div>}}
 }

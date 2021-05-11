@@ -142,14 +142,19 @@
 #' fit_1$plot(estimates_popn)
 #'
 #' # summarize MRP estimates numerically
-#' fit_1$summary(digits = 1)
-#' fit_1$summary(by = c("age", "gender"), digits = 1)
+#' fit_1$summary()
+#' fit_1$summary(by = c("age", "gender"), digits = 2)
 #'
 #' # summarize MRP estimates using precomputed aggregated estimates
 #' # this is much faster for large models/data
-#' fit_1$summary(estimates_popn, digits = 1)
-#' fit_1$summary(estimates_popn, estimates_by_age, digits = 1)
-#' fit_1$summary(estimates_popn, list(estimates_by_age, estimates_by_gender), digits = 1)
+#' fit_1$summary(estimates_popn, digits = 2)
+#' fit_1$summary(estimates_popn, estimates_by_age, digits = 2)
+#' fit_1$summary(estimates_popn, list(estimates_by_age, estimates_by_gender), digits = 2)
+#'
+#' # specify the summary stats and names
+#' my_stats <- list("avg" = mean, "sdt_dev" = sd, "p70" = function(x) quantile(x, 0.7))
+#' fit_1$summary(by = "age", stats = my_stats, digits = 2)
+#' fit_1$summary(by = "age", stats = list("median", "mad"))
 #'
 #' # summarize fitted model itself (not the MRP estimates)
 #' summary(fit_1$fit())

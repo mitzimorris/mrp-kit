@@ -219,9 +219,19 @@ SurveyFit <- R6::R6Class(
     #'   `aggregate` or a list of such data frame (to summarize by multiple
     #'   different variables). If not provided this is regenerated internally
     #'   (if `by` is specified), which may be slow for large models and data.
+    #' @param ... Arguments passed to `print`, e.g. `digits`.
     #' @param by Character vector of variable names. If `group_estimates` is not
     #'   provided then `by` is used to specify which variables to summarize by.
-    #' @param ... Arguments passed to `print`, e.g. `digits`.
+    #' @param stats A named list of univariate functions to compute. The
+    #' default is to compute the mean and standard deviation. The list
+    #' names are used as column names in the summarized output. The list values
+    #' must be names of functions of functions themselves. For example:
+    #'
+    #'     stats = list("mean", "std_dev" = sd, p70 = function(x) quantile(x, 0.7))
+    #'
+    #' will result in computing the mean (labelled "mean" in output, inferred because
+    #' the function name was given as a string), the standard deviation (labelled "std_dev"
+    #' in the output) and the 70th percentile (labelled "p70" in the output).
     #'
     #' @return A named list containing the following components:
     #'   * `population`: A data frame with one row and columns `mean` and `sd`.
@@ -230,7 +240,15 @@ SurveyFit <- R6::R6Class(
     #'   columns `mean` and `sd`.
     #'
     #'   The list has an extra class `"mrp_summary"` with a custom `print` method.
-    summary = function(population_estimates, group_estimates, ..., by = NULL) {
+    summary = function(population_estimates,
+                       group_estimates,
+                       ...,
+                       by = NULL,
+                       stats = list("mean", "sd")) {
+
+      stats <- validate_stats(stats)
+      stat_names <- names(stats)
+
       poststrat_estimates <- NULL
       if (missing(population_estimates)) {
         poststrat_estimates <- self$population_predict()
@@ -264,16 +282,28 @@ SurveyFit <- R6::R6Class(
         group_estimates <- list()
       }
 
-      population_summary <- data.frame(
-        mean = mean(population_estimates$value),
-        sd = stats::sd(population_estimates$value)
-      )
+      population_summary <- population_estimates %>%
+        dplyr::summarize (
+          x = sapply(stats, function(f) f(.data$value)),
+          name = stat_names
+        ) %>%
+        dplyr::mutate(id = "fake_id") %>%
+        stats::reshape(direction = "wide", idvar = "id", timevar = "name")
+      population_summary <- population_summary[, -1, drop = FALSE]
+      colnames(population_summary) <- stat_names
+
       group_summary <- lapply(seq_along(group_estimates), function(j) {
         by_var <- colnames(group_estimates[[j]])[1]
-        group_estimates[[j]] %>%
+        out <- group_estimates[[j]] %>%
           dplyr::group_by(.data[[by_var]]) %>%
-          dplyr::summarise(mean = mean(.data$value), sd = stats::sd(.data$value)) %>%
-          as.data.frame()
+          dplyr::summarize (
+            x = sapply(stats, function(f) f(.data$value)),
+            name = stat_names
+          ) %>%
+          as.data.frame() %>%
+          stats::reshape(direction = "wide", idvar = by_var, timevar = "name")
+        colnames(out)[-1] <- stat_names
+        out
       })
       names(group_summary) <- sapply(group_summary, function(x) colnames(x)[1])
       out <- list(population = population_summary, grouped = group_summary)
@@ -300,3 +330,24 @@ print.mrp_summary <- function(x, ...) {
   }
   invisible(x)
 }
+
+validate_stats <- function(stats) {
+  # take list names or name of function if specified as a string
+  # otherwise error
+  stat_names <- names(stats)
+  if (is.null(stat_names)) {
+    stat_names <- vector("character", length(stats))
+  }
+  for (j in seq_along(stat_names)) {
+    if (!nzchar(stat_names[j])) {
+      if (is.character(stats[[j]])) {
+        stat_names[j] <- stats[[j]]
+      } else {
+        stop("Name must be provided for element ", j , " of 'stats'.", call. = FALSE)
+      }
+    }
+  }
+  stats <- lapply(stats, match.fun)
+  setNames(stats, stat_names)
+}
+
