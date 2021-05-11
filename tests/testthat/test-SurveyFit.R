@@ -158,3 +158,15 @@ test_that("Aggregate runs without errors",{
 #   expect_gt(mean(popn_ests_brms$value), .85 - .02)
 # })
 
+
+test_that("summary method throws correct errors", {
+  expect_error(
+    fit_stan_glmer$summary(stats = list(f = function(x) c(x, x))),
+    "Function 'f' returns more than one value"
+  )
+  expect_error(
+    fit_stan_glmer$summary(stats = list("mean", function(x) c)),
+    "Name must be provided for element 2 of 'stats'"
+  )
+})
+

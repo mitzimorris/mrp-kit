@@ -139,14 +139,19 @@ mean(estimates_popn$value)
 fit_1$plot(estimates_popn)
 
 # summarize MRP estimates numerically
-fit_1$summary(digits = 1)
-fit_1$summary(by = c("age", "gender"), digits = 1)
+fit_1$summary()
+fit_1$summary(by = c("age", "gender"), digits = 2)
 
 # summarize MRP estimates using precomputed aggregated estimates
 # this is much faster for large models/data
-fit_1$summary(estimates_popn, digits = 1)
-fit_1$summary(estimates_popn, estimates_by_age, digits = 1)
-fit_1$summary(estimates_popn, list(estimates_by_age, estimates_by_gender), digits = 1)
+fit_1$summary(estimates_popn, digits = 2)
+fit_1$summary(estimates_popn, estimates_by_age, digits = 2)
+fit_1$summary(estimates_popn, list(estimates_by_age, estimates_by_gender), digits = 2)
+
+# specify the summary stats and names
+my_stats <- list("avg" = mean, "sdt_dev" = sd, "p70" = function(x) quantile(x, 0.7))
+fit_1$summary(by = "age", stats = my_stats, digits = 2)
+fit_1$summary(by = "age", stats = list("median", "mad"))
 
 # summarize fitted model itself (not the MRP estimates)
 summary(fit_1$fit())
@@ -331,14 +336,15 @@ different variables). If not provided this is regenerated internally
 \item{\code{by}}{Character vector of variable names. If \code{group_estimates} is not
 provided then \code{by} is used to specify which variables to summarize by.}
 
-\item{\code{stats}}{A named list of univariate functions to compute. The list
+\item{\code{stats}}{A named list of functions that each return a single value. The list
 names are used as column names in the summarized output. The list values
-must be names of functions of functions themselves. For example:\preformatted{stats = list("mean", "std_dev" = sd, p70 = function(x) quantile(x, 0.7))
+must be names of functions or functions themselves. For example:\preformatted{stats = list("mean", "std_dev" = sd, p70 = function(x) quantile(x, 0.7))
 }
 
 will result in computing the mean (labelled "mean" in output, inferred because
 the function name was given as a string), the standard deviation (labelled "std_dev"
-in the output) and the 70th percentile (labelled "p70" in the output).}
+in the output) and the 70th percentile (labelled "p70" in the output).
+The default is to compute just the mean and standard deviation.}
 }
 \if{html}{\out{</div>}}
 }

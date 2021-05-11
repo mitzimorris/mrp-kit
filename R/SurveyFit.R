@@ -222,16 +222,16 @@ SurveyFit <- R6::R6Class(
     #' @param ... Arguments passed to `print`, e.g. `digits`.
     #' @param by Character vector of variable names. If `group_estimates` is not
     #'   provided then `by` is used to specify which variables to summarize by.
-    #' @param stats A named list of univariate functions to compute. The
-    #' default is to compute the mean and standard deviation. The list
+    #' @param stats A named list of functions that each return a single value. The list
     #' names are used as column names in the summarized output. The list values
-    #' must be names of functions of functions themselves. For example:
+    #' must be names of functions or functions themselves. For example:
     #'
     #'     stats = list("mean", "std_dev" = sd, p70 = function(x) quantile(x, 0.7))
     #'
     #' will result in computing the mean (labelled "mean" in output, inferred because
     #' the function name was given as a string), the standard deviation (labelled "std_dev"
     #' in the output) and the 70th percentile (labelled "p70" in the output).
+    #' The default is to compute just the mean and standard deviation.
     #'
     #' @return A named list containing the following components:
     #'   * `population`: A data frame with one row and columns `mean` and `sd`.
@@ -348,6 +348,12 @@ validate_stats <- function(stats) {
     }
   }
   stats <- lapply(stats, match.fun)
-  setNames(stats, stat_names)
+  stats <- setNames(stats, stat_names)
+  for (j in seq_along(stats)) {
+    if (length(stats[[j]](1:2)) != 1) {
+      stop("Function '", stat_names[j], "' returns more than one value.", call. = FALSE)
+    }
+  }
+  stats
 }
 
