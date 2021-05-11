@@ -189,9 +189,9 @@ SurveyFit <- R6::R6Class(
           gg <- gg +
             ggplot2::geom_vline(data = wtd_ests, ggplot2::aes(xintercept = .data[["mean"]])) +
             ggplot2::annotate("rect",
-              xmin = wtd_ests$mean - 1.96*wtd_ests$sd, xmax = wtd_ests$mean + 1.96*wtd_ests$sd,
-              ymin = 0, ymax = 1,
-              alpha = .5, fill = "grey"
+                              xmin = wtd_ests$mean - 1.96*wtd_ests$sd, xmax = wtd_ests$mean + 1.96*wtd_ests$sd,
+                              ymin = 0, ymax = 1,
+                              alpha = .5, fill = "grey"
             )
         }
       }

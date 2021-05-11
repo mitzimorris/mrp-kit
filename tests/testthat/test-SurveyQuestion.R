@@ -92,15 +92,3 @@ test_that("warning if duplicated values in 'values_map'", {
   )
 })
 
-test_that("error if not many to one mapping", {
-  expect_error(
-    SurveyQuestion$new(
-      name = "pet",
-      col_names = c("pet_own","pet_pref"),
-      values_map = list("cat" = "cat", "dog" = "cat", "dog" = "dog")
-    ),
-    "Package can only handle many to one mappings"
-  )
-})
-
-

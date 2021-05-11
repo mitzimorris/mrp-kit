@@ -80,7 +80,7 @@ SurveyQuestion <- R6::R6Class(
                                     stringsAsFactors = TRUE)
       if (sum(duplicated(private$values_)) > 0) {
         warning("Duplicated values in map, removing duplicates", call. = FALSE)
-        private$values_ <- private$values_[!duplicated(private$values_), ]
+        private$values_ <- private$values_[!duplicated(private$values_), , drop = FALSE]
       }
       names(private$values_) <- col_names
       invisible(self)

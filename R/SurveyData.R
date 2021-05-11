@@ -51,159 +51,183 @@
 #' popn_obj$print()
 #'
 SurveyData <- R6::R6Class(
-    classname = "SurveyData",
-    private = list(
-        survey_data_ = data.frame(NULL),
-        mapped_data_ = data.frame(NULL),
-        questions_ = list(),
-        responses_ = list(),
-        weights_ = numeric(),
-        design_ = list()
-    ),
-    public = list(
-        #' @description Create a new SurveyData object
-        #' @param data A data frame containing the survey data.
-        #' @param questions,responses Named lists containing the text of the
-        #'   survey questions and the allowed responses, respectively. The names
-        #'   must correspond to the names of variables in `data`. See
-        #'   **Examples**.
-        #' @param weights Optionally, a vector of survey weights.
-        #' @param design Optionally, a named list of arguments to pass to `survey::svydesign()`.
-        initialize = function(data,
-                              questions = list(),
-                              responses = list(),
-                              weights = numeric(),
-                              design = list(ids =~1)) {
-            if (ncol(data) == 0 || nrow(data) == 0) {
-                stop("'data' cannot be empty.", call. = FALSE)
-            }
-            # allow no question/response, else require info for all columns
-            if (length(questions) != 0 || length(responses) != 0) {
-                if (ncol(data) != length(questions) &
-                    length(questions) == sum(stats::complete.cases(data))) {
-                    stop("Mismatch between number of data columns and questions.",
-                         call. = FALSE)
-                }
-                if (length(responses) != length(questions)) {
-                    stop("Mismatch between number of survey questions and responses.",
-                         call. = FALSE)
-                }
-            }
+  classname = "SurveyData",
+  private = list(
+    survey_data_ = data.frame(NULL),
+    mapped_data_ = data.frame(NULL),
+    questions_ = list(),
+    responses_ = list(),
+    weights_ = numeric(),
+    design_ = list()
+  ),
+  public = list(
+    #' @description Create a new SurveyData object
+    #' @param data A data frame containing the survey data.
+    #' @param questions,responses Named lists containing the text of the
+    #'   survey questions and the allowed responses, respectively. The names
+    #'   must correspond to the names of variables in `data`. See
+    #'   **Examples**.
+    #' @param weights Optionally, a vector of survey weights.
+    #' @param design Optionally, a named list of arguments to pass to `survey::svydesign()`.
+    initialize = function(data,
+                          questions = list(),
+                          responses = list(),
+                          weights = numeric(),
+                          design = list(ids =~1)) {
+      if (ncol(data) == 0 || nrow(data) == 0) {
+        stop("'data' cannot be empty.", call. = FALSE)
+      }
 
-            if (length(weights) != 0) {
-                if (length(weights) != nrow(data)) {
-                    stop("Mismatch between number of data rows and number of weights.",
-                         call. = FALSE)
-                }
-                if (anyNA(weights)) {
-                    stop("NAs not allowed in weights.", call. = FALSE)
-                }
-            }
+      # allow no question/response, else require info for all columns
+      if (length(questions) != 0 || length(responses) != 0) {
+        if (ncol(data) != length(questions) &
+            length(questions) == sum(stats::complete.cases(data))) {
+          stop("Mismatch between number of data columns and questions.",
+               call. = FALSE)
+        }
+        if (length(responses) != length(questions)) {
+          stop("Mismatch between number of survey questions and responses.",
+               call. = FALSE)
+        }
+        if (length(responses) != length(unique(responses))) {
+          stop("All elements of 'responses' must be unique.")
+        }
+        if (length(questions) != length(unique(questions))) {
+          stop("All elements of 'questions' must be unique.")
+        }
+      }
 
-            nms_q <- sort(names(questions))
-            nms_r <- sort(names(responses))
-            if (is.null(nms_q) || sum(nzchar(nms_q)) != length(nms_q)) {
-                stop("All elements of 'questions' and 'responses' list must have names.", call. = FALSE)
-            }
-            if (length(unique(nms_q)) != length(nms_q)) {
-                stop("Names in 'questions' must be unique.", call = FALSE)
-            }
-            if (!identical(nms_q, nms_r)) {
-                stop("Names in 'questions' and 'responses' lists must be the same.")
-            }
-            if (!all(nms_q %in% colnames(data))) {
-                stop("Names of 'questions' much match column names in 'data'.", call. = FALSE)
-            }
-            questions <- questions[nms_q]
-            responses <- responses[nms_q]
+      if (length(weights) != 0) {
+        if (length(weights) != nrow(data)) {
+          stop("Mismatch between number of data rows and number of weights.",
+               call. = FALSE)
+        }
+        if (anyNA(weights)) {
+          stop("NAs not allowed in weights.", call. = FALSE)
+        }
+      }
 
-            private$questions_ <- questions
-            private$responses_ <- responses
-            private$weights_ <- weights
-            private$design_ <- design
-            private$survey_data_ <- data.frame(.key = 1:nrow(data), data)
-            private$mapped_data_ <- data.frame(.key = 1:nrow(data))
-            invisible(self)
-        },
+      nms_q <- sort(names(questions))
+      nms_r <- sort(names(responses))
+      if (is.null(nms_q) || sum(nzchar(nms_q)) != length(nms_q)) {
+        stop("All elements of 'questions' and 'responses' list must have names.", call. = FALSE)
+      }
+      if (length(unique(nms_q)) != length(nms_q)) {
+        stop("Names in 'questions' must be unique.", call = FALSE)
+      }
+      if (!identical(nms_q, nms_r)) {
+        stop("Names in 'questions' and 'responses' lists must be the same.")
+      }
+      if (!all(nms_q %in% colnames(data))) {
+        stop("Names of 'questions' much match column names in 'data'.", call. = FALSE)
+      }
+      questions <- questions[nms_q]
+      responses <- responses[nms_q]
 
-        #' @description Number of observations in the survey data
-        n_obs = function() nrow(private$survey_data_),
+      for (j in seq_along(questions)) {
+        responses_provided <- sort(responses[[j]])
+        if (is.factor(data[[nms_q[j]]])) {
+          responses_in_data <- sort(levels(data[[nms_q[j]]]))
+        } else {
+          responses_in_data <- sort(unique(data[[nms_q[j]]]))
+        }
+        if (!identical(responses_provided, responses_in_data)) {
+          stop(
+            "Values in data do not match specified responses for variable '", nms_q[j], "'. ",
+            "\nValues in 'data': ", paste(responses_in_data, collapse = ", "),
+            "\nValues in 'responses': ", paste(responses_provided, collapse = ", "),
+            call. = FALSE
+          )
+        }
+      }
 
-        #' @description Number of survey questions
-        n_questions = function() length(private$questions_),
+      private$questions_ <- questions
+      private$responses_ <- responses
+      private$weights_ <- weights
+      private$design_ <- design
+      private$survey_data_ <- data.frame(.key = 1:nrow(data), data)
+      private$mapped_data_ <- data.frame(.key = 1:nrow(data))
+      invisible(self)
+    },
 
-        #' @description Print a summary of the survey data
-        #' @param ... Currently ignored.
-        print = function(...) {
-            cat("Survey with",
-                self$n_obs(), "observations,",
-                self$n_questions(), "questions",
-                "\n")
+    #' @description Number of observations in the survey data
+    n_obs = function() nrow(private$survey_data_),
 
-            print_survey_design(private$design_, private$weights_, private$survey_data_)
-            print_questions_and_responses(private$questions_, private$responses_)
-            invisible(self)
-        },
+    #' @description Number of survey questions
+    n_questions = function() length(private$questions_),
 
-        #' @description Add a column to the sample data. This is primarily
-        #'   intended for internal use but may occasionally be useful.
-        #' @param name,value The name of the new variable (a string) and the
-        #' vector of values to add to the data frame.
-        add_survey_data_column = function(name, value) {
-            if (length(value) != nrow(private$survey_data_)) {
-              stop("New variable must have same number of observations as the survey data.",
-                   call. = FALSE)
-            }
-            private$survey_data_[[name]] <- value
-            invisible(self)
-        },
-        #' @description Add a column to the mapped data. This is primarily
-        #'   intended for internal use but may occasionally be useful.
-        #' @param name,value The name of the new variable (a string) and the
-        #' vector of values to add to the data frame.
-        add_mapped_data_column = function(name, value) {
-            if (ncol(private$mapped_data_)  == 0) {
-                private$mapped_data_ <- data.frame(value)
-                colnames(private$mapped_data_) <- name
-            } else {
-                private$mapped_data_[[name]] <- value
-            }
-            invisible(self)
-        },
+    #' @description Print a summary of the survey data
+    #' @param ... Currently ignored.
+    print = function(...) {
+      cat("Survey with",
+          self$n_obs(), "observations,",
+          self$n_questions(), "questions",
+          "\n")
 
-        #' @description Access the data frame containing the sample data.
-        #' @param key Should the `.key` column be included? This column just
-        #'   indicates the original order of the rows and is primarily intended
-        #'   for internal use.
-        survey_data = function(key = TRUE) {
-            if (key) {
-                private$survey_data_
-            } else {
-                private$survey_data_[, colnames(private$survey_data_) != ".key", drop = FALSE]
-            }
-        },
+      print_survey_design(private$design_, private$weights_, private$survey_data_)
+      print_questions_and_responses(private$questions_, private$responses_)
+      invisible(self)
+    },
 
-        #' @description Access the data frame containing the mapped data.
-        #' @param key Should the `.key` column be included? This column just
-        #'   indicates the original order of the rows and is primarily intended
-        #'   for internal use.
-        mapped_data = function(key = TRUE) {
-            if (key) {
-                private$mapped_data_
-            } else {
-                private$mapped_data_[, colnames(private$mapped_data_) != ".key", drop = FALSE]
-            }
-        },
+    #' @description Add a column to the sample data. This is primarily
+    #'   intended for internal use but may occasionally be useful.
+    #' @param name,value The name of the new variable (a string) and the
+    #' vector of values to add to the data frame.
+    add_survey_data_column = function(name, value) {
+      if (length(value) != nrow(private$survey_data_)) {
+        stop("New variable must have same number of observations as the survey data.",
+             call. = FALSE)
+      }
+      private$survey_data_[[name]] <- value
+      invisible(self)
+    },
+    #' @description Add a column to the mapped data. This is primarily
+    #'   intended for internal use but may occasionally be useful.
+    #' @param name,value The name of the new variable (a string) and the
+    #' vector of values to add to the data frame.
+    add_mapped_data_column = function(name, value) {
+      if (ncol(private$mapped_data_)  == 0) {
+        private$mapped_data_ <- data.frame(value)
+        colnames(private$mapped_data_) <- name
+      } else {
+        private$mapped_data_[[name]] <- value
+      }
+      invisible(self)
+    },
 
-        #' @description Access the list of survey questions
-        questions = function() private$questions_,
-        #' @description Access the list of allowed survey responses
-        responses = function() private$responses_,
-        #' @description Access the survey weights
-        weights = function() private$weights_,
-        #' @description Access the survey design
-        design = function() private$design_
-    )
+    #' @description Access the data frame containing the sample data.
+    #' @param key Should the `.key` column be included? This column just
+    #'   indicates the original order of the rows and is primarily intended
+    #'   for internal use.
+    survey_data = function(key = TRUE) {
+      if (key) {
+        private$survey_data_
+      } else {
+        private$survey_data_[, colnames(private$survey_data_) != ".key", drop = FALSE]
+      }
+    },
+
+    #' @description Access the data frame containing the mapped data.
+    #' @param key Should the `.key` column be included? This column just
+    #'   indicates the original order of the rows and is primarily intended
+    #'   for internal use.
+    mapped_data = function(key = TRUE) {
+      if (key) {
+        private$mapped_data_
+      } else {
+        private$mapped_data_[, colnames(private$mapped_data_) != ".key", drop = FALSE]
+      }
+    },
+
+    #' @description Access the list of survey questions
+    questions = function() private$questions_,
+    #' @description Access the list of allowed survey responses
+    responses = function() private$responses_,
+    #' @description Access the survey weights
+    weights = function() private$weights_,
+    #' @description Access the survey design
+    design = function() private$design_
+  )
 )
 
 

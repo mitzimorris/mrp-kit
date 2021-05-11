@@ -362,7 +362,7 @@ SurveyMap <- R6::R6Class(
             names(new_levels_popn)[k] <- as.character(levels_map_samp[k])
           } else if (!is_samp_unique & !is_popn_unique) {
             multiple_collapse[k] = TRUE
-            }
+          }
         }
         if(sum(multiple_collapse)>0){
 

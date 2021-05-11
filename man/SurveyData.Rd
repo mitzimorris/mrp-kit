@@ -30,6 +30,7 @@ feline_prefs <- SurveyData$new(
   design = list(ids =~1)
 )
 feline_prefs$print()
+feline_prefs$n_questions()
 
 head(approx_popn)
 popn_obj <- SurveyData$new(

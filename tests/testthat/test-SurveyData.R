@@ -46,13 +46,26 @@ test_that("error if unequal number of questions and responses", {
 
 
 test_that("error if unmatched response and levels in data", {
+  # if variable is a factor
   expect_error(
     SurveyData$new(
       data = feline_survey,
       questions = list(gender = "Please select your gender"),
       responses = list(gender = c("male", "female"))
     ),
-    "?? the error in SurveyData.R haven't been specified?"
+    "Values in data do not match specified responses for variable 'gender'"
+  )
+
+  # if variable isn't a factor
+  feline_survey2 <- feline_survey
+  feline_survey2$gender <- as.character(feline_survey2$gender)
+  expect_error(
+    SurveyData$new(
+      data = feline_survey2,
+      questions = list(gender = "Please select your gender"),
+      responses = list(gender = c("male", "female"))
+    ),
+    "Values in data do not match specified responses for variable 'gender'"
   )
 })
 

@@ -13,15 +13,15 @@ Authors@R: c(
            email = "jsg2201@columbia.edu"),
     person(given = "Mitzi",
            family = "Morris",
-           role = c("aut"),
+           role = c("aut")),
     person(given = "Dewi",
            family = "Amaliah",
-           role = c("aut"),
+           role = c("aut")),
     person(given = "Rohan",
            family = "Alexander",
            role = c("aut"),
            email = "rohan.alexander@utoronto.ca")
-           ))
+           )
 Description: Conducts multilevel regression with post-stratification in an opinionated 
     and specific way. Users specify two datasets (sample and population), establish 
     a correspondence between them, and then conduct analysis.
