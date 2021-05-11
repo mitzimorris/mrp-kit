@@ -47,25 +47,31 @@ SurveyQuestion <- R6::R6Class(
     #'   responses to the question in the sample data and the values correspond
     #'   to the responses in the population data. If there is a meaningful
     #'   ordering over the values, they should be listed in that order, either
-    #'   descending or ascending.
-    #' @return A `SurveyQuestion` object that can be added to a [`SurveyData`]
+    #'   descending or ascending. See **Examples**.
+    #' @return A `SurveyQuestion` object that can be added to a [`SurveyMap`]
     #'   object.
     #'
     initialize = function(name, col_names, values_map) {
+      if (!is.character(name) || length(name) != 1) {
+        stop("'name' must be a single string.", call. = FALSE)
+      }
       if (is.na(name)) {
-        stop("Please specify a general name for this construct", call. = FALSE)
+        stop("'name' cannot be NA.", call. = FALSE)
+      }
+      if (!is.character(col_names) || length(col_names) != 2) {
+        stop("'col_names' must be a character vector of length 2.", call. = FALSE)
       }
       if (anyNA(col_names)) {
-        stop("Please specify the sample and population column names.", call. = FALSE)
+        stop("NAs not allowed in 'col_names'.", call. = FALSE)
       }
-      if (length(col_names) != 2) {
-        stop("'col_names' must have length 2.", call. = FALSE)
+      if (!is.list(values_map)) {
+        stop("'values_map' must be a list", call. = FALSE)
       }
-      if (anyNA(names(values_map))) {
-        stop("Missing sample levels", call. = FALSE)
+      if (!all(nzchar(names(values_map)))) {
+        stop("All elements of 'values_map' must have names.", call. = FALSE)
       }
-      if (anyNA(as.character(unlist(values_map)))) {
-        stop("Missing population levels", call. = FALSE)
+      if (anyNA(values_map)) {
+        stop("NAs not allowed in 'values_map'", call. = FALSE)
       }
 
       private$name_ <- name
@@ -73,31 +79,8 @@ SurveyQuestion <- R6::R6Class(
       private$values_ <- data.frame(names(values_map), as.character(unlist(values_map)),
                                     stringsAsFactors = TRUE)
       if (sum(duplicated(private$values_)) > 0) {
-        warning("Duplicated mapping in values, removing duplciates", call. = FALSE)
+        warning("Duplicated values in map, removing duplicates", call. = FALSE)
         private$values_ <- private$values_[!duplicated(private$values_), ]
-      }
-      if (sum(duplicated(private$values_[, 2])) > 0 ||
-          sum(duplicated(private$values_[, 1])) > 0) {
-        dup_labels_pop <- which(duplicated(private$values_[, 2]))
-        dup_labels_samp <- which(duplicated(private$values_[, 1]))
-        for (d in dup_labels_pop) {
-          pop_loc_duplicates <- private$values_[, 2] %in% private$values_[d, 2]
-          for (b in dup_labels_samp) {
-            samp_loc_duplicates <- private$values_[, 1] %in% private$values_[b, 1]
-            if (sum(pop_loc_duplicates & samp_loc_duplicates) > 0) {
-              stop("Package can only handle many to one mappings", call. = FALSE)
-            }
-          }
-        }
-        for (b in dup_labels_samp) {
-          samp_loc_duplicates <- private$values_[, 1] %in% private$values_[b, 1]
-          for (d in dup_labels_pop) {
-            pop_loc_duplicates <- private$values_[, 2] %in% private$values_[d, 2]
-            if (sum(pop_loc_duplicates & samp_loc_duplicates) > 0) {
-              stop("Package can only handle many to one mappings", call. = FALSE)
-            }
-          }
-        }
       }
       names(private$values_) <- col_names
       invisible(self)

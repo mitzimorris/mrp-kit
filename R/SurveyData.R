@@ -29,6 +29,7 @@
 #'   design = list(ids =~1)
 #' )
 #' feline_prefs$print()
+#' feline_prefs$n_questions()
 #'
 #' head(approx_popn)
 #' popn_obj <- SurveyData$new(
@@ -84,20 +85,28 @@ SurveyData <- R6::R6Class(
                          call. = FALSE)
                 }
                 if (length(responses) != length(questions)) {
-                    stop("Mismatch between number of survey questions and answers.",
+                    stop("Mismatch between number of survey questions and responses.",
                          call. = FALSE)
                 }
             }
-            # allow no weights, else require weights for all rows
-            if (length(weights) != 0 && nrow(data) != length(weights)) {
-                stop("Mismatch between number of data columns and weights.",
-                     call. = FALSE)
+
+            if (length(weights) != 0) {
+                if (length(weights) != nrow(data)) {
+                    stop("Mismatch between number of data rows and number of weights.",
+                         call. = FALSE)
+                }
+                if (anyNA(weights)) {
+                    stop("NAs not allowed in weights.", call. = FALSE)
+                }
             }
 
             nms_q <- sort(names(questions))
             nms_r <- sort(names(responses))
             if (is.null(nms_q) || sum(nzchar(nms_q)) != length(nms_q)) {
                 stop("All elements of 'questions' and 'responses' list must have names.", call. = FALSE)
+            }
+            if (length(unique(nms_q)) != length(nms_q)) {
+                stop("Names in 'questions' must be unique.", call = FALSE)
             }
             if (!identical(nms_q, nms_r)) {
                 stop("Names in 'questions' and 'responses' lists must be the same.")
@@ -141,6 +150,10 @@ SurveyData <- R6::R6Class(
         #' @param name,value The name of the new variable (a string) and the
         #' vector of values to add to the data frame.
         add_survey_data_column = function(name, value) {
+            if (length(value) != nrow(private$survey_data_)) {
+              stop("New variable must have same number of observations as the survey data.",
+                   call. = FALSE)
+            }
             private$survey_data_[[name]] <- value
             invisible(self)
         },

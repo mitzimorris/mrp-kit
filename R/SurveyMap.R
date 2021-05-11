@@ -214,8 +214,8 @@ SurveyMap <- R6::R6Class(
       for (i in 1:length(dots)) {
         ll_length <- length(private$item_map_)
         if (dots[[i]]$name() %in% names(private$item_map_)) {
-          stop("Survey label: ", dots[[i]]$name(), " already defined.  ",
-               "Use function 'replace' instead. ", call. = FALSE)
+          stop("Survey label '", dots[[i]]$name(), "' already defined.  ",
+               "Use 'replace' method instead.", call. = FALSE)
         }
         private$item_map_[[ll_length + 1]] <- dots[[i]]
         names(private$item_map_)[ll_length + 1] <- private$item_map_[[ll_length + 1]]$name()
@@ -236,7 +236,7 @@ SurveyMap <- R6::R6Class(
           loc_name <- tmp_list[[i]]
         }
         if (sum(loc_id) == 0) {
-          stop("Survey label: ", loc_name, " not defined.  ",
+          stop("Survey label '", loc_name, "' not defined.",
                call. = FALSE)
         } else {
           private$item_map_[[which(loc_id)]] <- NULL
@@ -269,7 +269,7 @@ SurveyMap <- R6::R6Class(
             name = samp_mapnames[j],
             value = as.factor(private$samp_obj_$survey_data()[, samp_mapnames[j]])
           )
-          warning("Converting ", samp_mapnames[j], "into a factor with levels ",
+          warning("Converting '", samp_mapnames[j], "' into a factor with levels ",
                   paste(levels(private$samp_obj_$survey_data()[, samp_mapnames[j]]), collapse = ", "),
                   call. = FALSE)
         }
@@ -278,7 +278,7 @@ SurveyMap <- R6::R6Class(
             name = popn_mapnames[j],
             value = as.factor(private$popn_obj_$survey_data()[, popn_mapnames[j]])
           )
-          warning("Converting ", popn_mapnames[j], "into a factor with levels ",
+          warning("Converting '", popn_mapnames[j], "' into a factor with levels ",
                   paste(levels(private$popn_obj_$survey_data()[, popn_mapnames[j]]), collapse = ", "),
                   call. = FALSE)
         }
@@ -287,39 +287,39 @@ SurveyMap <- R6::R6Class(
         levels_data_samp <- levels(private$samp_obj_$survey_data()[, samp_mapnames[j]])
         levels_data_popn <- levels(private$popn_obj_$survey_data()[, popn_mapnames[j]])
         if (!samp_mapnames[j] %in% samp_dfnames) {
-          stop("Variable ", samp_mapnames[j], " not in sample", call. = FALSE)
+          stop("Variable '", samp_mapnames[j], "' not in sample", call. = FALSE)
         }
         if (!popn_mapnames[j] %in% popn_dfnames) {
-          stop("Variable ", popn_mapnames[j], " not in population",
+          stop("Variable '", popn_mapnames[j], "' not in population",
                call. = FALSE)
         }
         if (sum(!levels_map_samp %in% levels_data_samp) > 0) {
-          stop("Levels in ",samp_mapnames[j]," ",
+          stop("Levels in '",samp_mapnames[j],"' ",
                paste(levels_map_samp[!levels_map_samp %in% levels_data_samp], collapse = ", "),
                " are included in the map but are not in the sample",
                call. = FALSE)
         }
         if (sum(!levels_data_samp %in% levels_map_samp) > 0) {
-          stop("Levels in ",samp_mapnames[j], " ",
+          stop("Levels in '",samp_mapnames[j], "' ",
                paste(levels_data_samp[!levels_data_samp %in% levels_map_samp], collapse = ", "),
                " are included in the sample but are not in the map",
                call. = FALSE)
         }
         if (sum(!levels_map_popn %in% levels_data_popn) > 0) {
-          stop("Levels in ",popn_mapnames[j], " ",
+          stop("Levels in '",popn_mapnames[j], "' ",
                paste(levels_map_popn[!levels_map_popn %in% levels_data_popn], collapse = ", "),
                " are included in the map but are not in the population data",
                call. = FALSE)
         }
         if (sum(!levels_data_popn %in% levels_map_popn)>0) {
-          stop("Levels in ",popn_mapnames[j], " ",
+          stop("Levels in '",popn_mapnames[j], "' ",
                paste(levels_data_popn[!levels_data_popn %in% levels_map_popn], collapse = ", "),
                " are included in the population data but are not in the map",
                call. = FALSE)
         }
       }
       if (sum(popn_mapnames %in% popn_dfnames) < length(popn_dfnames)) {
-        warning("Variable(s) ", paste(popn_dfnames[!popn_dfnames %in% popn_mapnames], collapse = ", "),
+        warning("Variable(s) ", paste(sQuote(popn_dfnames[!popn_dfnames %in% popn_mapnames], q = "'"), collapse = ", "),
                 " are available in the population but won't be used in the model ",
                 call. = FALSE)
       }
@@ -340,6 +340,7 @@ SurveyMap <- R6::R6Class(
         new_varname <- private$item_map_[[j]]$name()
         new_levels_samp <- character(length(levels_map_samp))
         new_levels_popn <- character(length(levels_map_popn))
+        multiple_collapse <- rep(x = FALSE, length(levels_map_samp))
         for (k in 1:length(levels_map_samp)) {
           is_samp_unique <- sum(levels_map_samp %in% levels_map_samp[k]) == 1
           is_popn_unique <- sum(levels_map_popn %in% levels_map_popn[k]) == 1
@@ -355,8 +356,26 @@ SurveyMap <- R6::R6Class(
             names(new_levels_samp)[k] <- as.character(levels_map_samp[k])
             names(new_levels_popn)[k] <- as.character(levels_map_samp[k])
           } else if (!is_samp_unique & !is_popn_unique) {
-            stop("Mapping can only handle many to one mappings.", call. = FALSE)
+            multiple_collapse[k] = TRUE
+            }
+        }
+        if(sum(multiple_collapse)>0){
+
+          dup_labels_popn <- levels_map_popn[duplicated(levels_map_popn)]
+          dup_labels_samp <- levels_map_samp[duplicated(levels_map_samp)]
+
+          dup_labels_samp <- levels_map_samp %in% dup_labels_samp
+          dup_labels_popn <- levels_map_popn %in% dup_labels_popn
+
+          potential_indices <- dup_labels_samp + dup_labels_popn>0
+          if (sum(multiple_collapse[potential_indices]>0)){
+            collapsed_names <- paste0(unique(levels_map_samp[potential_indices]), collapse = " + ")
+            names(new_levels_popn)[potential_indices] <- collapsed_names
+            names(new_levels_samp)[potential_indices] <- collapsed_names
+          } else{
+            stop("There is an error with the mapping. Please investigate further.")
           }
+
         }
         private$samp_obj_$add_mapped_data_column(new_varname, forcats::fct_recode(private$samp_obj_$survey_data()[[samp_mapnames]], !!!new_levels_samp))
         private$popn_obj_$add_mapped_data_column(new_varname, forcats::fct_recode(private$popn_obj_$survey_data()[[popn_mapnames]], !!!new_levels_popn))
@@ -405,18 +424,47 @@ SurveyMap <- R6::R6Class(
         stop("Currently only binomial and bernoulli models are supported.",
              call. = FALSE)
       }
-      if (is.null(private$samp_obj_$mapped_data())) {
+      if (identical(colnames(private$samp_obj_$mapped_data()), ".key")) {
         stop("Mapped data not found. ",
              "Please call the mapping() method before fitting a model.",
              call. = FALSE)
       }
+      if (nrow(private$poststrat_data_) == 0) {
+        stop("Post-stratification data not found. ",
+             "Please call the tabulate() method before fitting a model.",
+             call. = FALSE)
+      }
 
-      # TODO: error if variables in formula aren't in data
+      admin_package <- as.character(getNamespaceName(environment(fun)))
+      if (!any(admin_package %in% c("lme4","brms","rstanarm"))){
+        warning("Only rstanarm, brms and lme4 are supported natively. ",
+                "Other modeling tools will need a custom population_predict() method.",
+                call. = FALSE)
+      }
+
       formula <- as.formula(formula)
       mapped_data <- private$samp_obj_$mapped_data()
+      rhs_vars <- all.vars(formula[-2])
+      lhs_vars <- all.vars(update(formula, "~0"))
+
+      if (sum(!rhs_vars %in% colnames(mapped_data))) {
+        stop("Not all variables available in the data. ",
+             paste("Missing vars: ", paste(rhs_vars[!rhs_vars %in% colnames(mapped_data)], collapse = ', ')),
+             call. = FALSE)
+      }
+      if (sum(!lhs_vars %in% colnames(private$samp_obj_$survey_data()))) {
+        stop("Outcome variable not present in data. ",
+             call. = FALSE)
+      }
+      if (sum(!rhs_vars %in% colnames(private$poststrat_data_))) {
+        stop("Predictor variables not known in population. ",
+             "Please ensure all predictor variables are mapped from sample to population. ",
+             paste("Missing vars:", paste(rhs_vars[!rhs_vars %in% colnames(private$poststrat_data_)], collapse = ', ')),
+             call. = FALSE)
+      }
+
       need_vars <- setdiff(all.vars(formula), colnames(mapped_data))
       y_and_x <- private$samp_obj_$survey_data()[, need_vars, drop = FALSE]
-
       args$formula <- formula
       args$data <- cbind(mapped_data, y_and_x)
       fit <- do.call(fun, args)

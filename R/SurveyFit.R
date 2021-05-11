@@ -46,20 +46,21 @@ SurveyFit <- R6::R6Class(
 
     #' @description Use fitted model to add predicted probabilities to post-stratification dataset.
     #' @param fun The function to use to generate the predicted probabilities.
-    #'   This should only be specified if using a custom model fitting function.
+    #'   This should only be specified if you used a model fitting function
+    #'   not natively supported by \pkg{mrpkit}.
     #'   For models fit using \pkg{rstanarm}, \pkg{brms}, or \pkg{lme4}, `fun`
-    #'   is handled automatically. If `fun` is a custom function then the first
-    #'   argument should take in the fitted model object and the second argument
-    #'   should take in the poststratification data frame. The
-    #'   function must return a matrix with rows corresponding to the columns of
-    #'   the poststratification data and columns corresponding to simulations.
-    #' @param ... Arguments other than the fitted model and poststratification
-    #'   data frame to pass to `fun`.
+    #'   is handled automatically. If `fun` is specified then:
+    #'   * the first argument should be the fitted model object
+    #'   * the second argument should be the poststratification data frame
+    #'   * it can take an arbitrary number of other arguments
+    #'   * the returned object should match the specifications in the 'Returns'
+    #'    section below in order to be compatible with subsequent methods
+    #' @param ... Arguments other than the fitted model object and
+    #'   poststratification data frame to pass to `fun`.
     #' @return A matrix with rows corresponding to poststratification cells and
     #'   columns corresponding to posterior samples (or approximate ones
     #'   in the case of \pkg{lme4} models).
-    #'
-    population_predict = function(fun = NULL, ...) {
+    population_predict = function(..., fun = NULL) {
       args <- list(...)
       if (!is.null(args$newdata) && is.null(fun)) {
         stop("The 'newdata' argument should not be specified.",
@@ -73,7 +74,7 @@ SurveyFit <- R6::R6Class(
       poststrat <- private$map_$poststrat_data()
 
       if (is.null(fun)) {
-        if ("stanreg" %in% class(private$fit_)){
+        if ("stanreg" %in% class(private$fit_)) {
           require_suggested_package("rstanarm", "2.21.0")
           return(
             t(suppressMessages(rstanarm::posterior_linpred(
@@ -83,8 +84,7 @@ SurveyFit <- R6::R6Class(
               ...
             )))
           )
-        }
-        if ("brmsfit" %in% class(private$fit_)){
+        } else if ("brmsfit" %in% class(private$fit_)) {
           require_suggested_package("brms")
           return(
             t(brms::posterior_epred(
@@ -98,8 +98,7 @@ SurveyFit <- R6::R6Class(
               ...
             ))
           )
-        }
-        if ("glmerMod" %in% class(private$fit_)) {
+        } else if ("glmerMod" %in% class(private$fit_)) {
           require_suggested_package("lme4")
           return(
             sim_posterior_probs(
@@ -108,6 +107,9 @@ SurveyFit <- R6::R6Class(
               ...
             )
           )
+        } else {
+          stop("Custom population_predict method required. Please specifiy 'fun'.",
+               call. = FALSE)
         }
       } else {
         fun <- match.fun(fun)

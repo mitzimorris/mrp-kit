@@ -230,23 +230,27 @@ Call the fitted model object's print method
 \subsection{Method \code{population_predict()}}{
 Use fitted model to add predicted probabilities to post-stratification dataset.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$population_predict(fun = NULL, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SurveyFit$population_predict(..., fun = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{fun}}{The function to use to generate the predicted probabilities.
-This should only be specified if using a custom model fitting function.
-For models fit using \pkg{rstanarm}, \pkg{brms}, or \pkg{lme4}, \code{fun}
-is handled automatically. If \code{fun} is a custom function then the first
-argument should take in the fitted model object and the second argument
-should take in the poststratification data frame. The
-function must return a matrix with rows corresponding to the columns of
-the poststratification data and columns corresponding to simulations.}
+\item{\code{...}}{Arguments other than the fitted model object and
+poststratification data frame to pass to \code{fun}.}
 
-\item{\code{...}}{Arguments other than the fitted model and poststratification
-data frame to pass to \code{fun}.}
+\item{\code{fun}}{The function to use to generate the predicted probabilities.
+This should only be specified if you used a model fitting function
+not natively supported by \pkg{mrpkit}.
+For models fit using \pkg{rstanarm}, \pkg{brms}, or \pkg{lme4}, \code{fun}
+is handled automatically. If \code{fun} is specified then:
+\itemize{
+\item the first argument should be the fitted model object
+\item the second argument should be the poststratification data frame
+\item it can take an arbitrary number of other arguments
+\item the returned object should match the specifications in the 'Returns'
+section below in order to be compatible with subsequent methods
+}}
 }
 \if{html}{\out{</div>}}
 }
