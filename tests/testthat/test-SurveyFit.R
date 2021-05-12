@@ -106,16 +106,20 @@ if (requireNamespace("lme4", quietly = TRUE)) {
   )
 }
 
-test_that("population_predict runs without errors",{
-  skip_if_not_installed("rstanarm")
-  expect_error(fit_stan_glmer$population_predict(), regexp = NA)
-  expect_error(fit_stan_glm$population_predict(), regexp = NA)
+test_that("population_predict returns correct objects",{
+  # expect 5 draws (because iter = 10 above) for columns
+  # expect same number of rows as poststrat data
+  expected_dims <- c(nrow(ex_map$poststrat_data()), 5)
 
-  skip_if_not_installed("lme4")
-  expect_error(fit_glmer$population_predict(), regexp = NA)
+  skip_if_not_installed("rstanarm")
+  expect_equal(dim(fit_stan_glmer$population_predict()), expected_dims)
+  expect_equal(dim(fit_stan_glm$population_predict()), expected_dims)
 
   skip_if_not_installed("brms")
-  expect_error(fit_brms$population_predict(), regexp = NA)
+  expect_equal(dim(fit_brms$population_predict()), expected_dims)
+
+  skip_if_not_installed("lme4")
+  expect_equal(dim(fit_glmer$population_predict(nsamples = 5)), expected_dims)
 })
 
 test_that("population_predict errors if custom fun required but not specified", {
@@ -125,20 +129,59 @@ test_that("population_predict errors if custom fun required but not specified", 
   )
 })
 
-test_that("Aggregate runs without errors",{
-  skip_if_not_installed("rstanarm")
-  expect_error(fit_stan_glmer$aggregate(fit_stan_glmer$population_predict()),
-               regexp = NA)
-  expect_error(fit_stan_glm$aggregate(fit_stan_glm$population_predict()),
-               regexp = NA)
+test_that("Aggregate (to population) returns correct objects", {
+  expected_dims <- c(5, 1) # 5 = 10 iter / 2
 
-  skip_if_not_installed("lme4")
-  expect_error(fit_glmer$aggregate(fit_glmer$population_predict()),
-               regexp = NA)
+  skip_if_not_installed("rstanarm")
+  x <- fit_stan_glmer$aggregate(fit_stan_glmer$population_predict())
+  expect_s3_class(x, "data.frame")
+  expect_named(x, "value")
+  expect_equal(dim(x), expected_dims)
+
+  x <- fit_stan_glmer$aggregate(fit_stan_glm$population_predict())
+  expect_s3_class(x, "data.frame")
+  expect_named(x, "value")
+  expect_equal(dim(x), expected_dims)
 
   skip_if_not_installed("brms")
-  expect_error(fit_brms$aggregate(fit_brms$population_predict()),
-               regexp = NA)
+  x <- fit_brms$aggregate(fit_brms$population_predict())
+  expect_s3_class(x, "data.frame")
+  expect_named(x, "value")
+  expect_equal(dim(x), expected_dims)
+
+  skip_if_not_installed("lme4")
+  x <- fit_glmer$aggregate(fit_glmer$population_predict(nsamples = 5))
+  expect_s3_class(x, "data.frame")
+  expect_named(x, "value")
+  expect_equal(dim(x), expected_dims)
+})
+
+test_that("Aggregate (by variable level) returns correct objects", {
+  expected_dims <- c(5 * nlevels(popn_obj$survey_data()$age), 3) # 5 = 10 iter / 2
+  expected_names <- c("age", "draw", "value")
+
+  skip_if_not_installed("rstanarm")
+  x <- fit_stan_glmer$aggregate(fit_stan_glmer$population_predict(), by = "age")
+  expect_s3_class(x, "data.frame")
+  expect_named(x, expected_names)
+  expect_equal(dim(x), expected_dims)
+
+  x <- fit_stan_glm$aggregate(fit_stan_glm$population_predict(), by = "age")
+  expect_s3_class(x, "data.frame")
+  expect_named(x, expected_names)
+  expect_equal(dim(x), expected_dims)
+
+  skip_if_not_installed("brms")
+  x <- fit_brms$aggregate(fit_brms$population_predict(), by = "age")
+  expect_s3_class(x, "data.frame")
+  expect_named(x, expected_names)
+  expect_equal(dim(x), expected_dims)
+
+  skip_if_not_installed("lme4")
+  x <- fit_glmer$aggregate(fit_glmer$population_predict(nsamples = 5), by = "age")
+  expect_s3_class(x, "data.frame")
+  expect_named(x, expected_names)
+  expect_equal(dim(x), expected_dims)
 })
 
 # the objects in this test still need to be created
