@@ -65,12 +65,12 @@ data (second element).}
 responses to the question in the sample data and the values correspond
 to the responses in the population data. If there is a meaningful
 ordering over the values, they should be listed in that order, either
-descending or ascending.}
+descending or ascending. See \strong{Examples}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A \code{SurveyQuestion} object that can be added to a \code{\link{SurveyData}}
+A \code{SurveyQuestion} object that can be added to a \code{\link{SurveyMap}}
 object.
 }
 }

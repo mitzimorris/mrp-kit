@@ -30,6 +30,7 @@ feline_prefs <- SurveyData$new(
   design = list(ids =~1)
 )
 feline_prefs$print()
+feline_prefs$n_questions()
 
 head(approx_popn)
 popn_obj <- SurveyData$new(
@@ -59,9 +60,7 @@ popn_obj$print()
 \item \href{#method-n_questions}{\code{SurveyData$n_questions()}}
 \item \href{#method-print}{\code{SurveyData$print()}}
 \item \href{#method-add_survey_data_column}{\code{SurveyData$add_survey_data_column()}}
-\item \href{#method-add_mapped_data_column}{\code{SurveyData$add_mapped_data_column()}}
 \item \href{#method-survey_data}{\code{SurveyData$survey_data()}}
-\item \href{#method-mapped_data}{\code{SurveyData$mapped_data()}}
 \item \href{#method-questions}{\code{SurveyData$questions()}}
 \item \href{#method-responses}{\code{SurveyData$responses()}}
 \item \href{#method-weights}{\code{SurveyData$weights()}}
@@ -89,10 +88,11 @@ Create a new SurveyData object
 \describe{
 \item{\code{data}}{A data frame containing the survey data.}
 
-\item{\code{questions, responses}}{Named lists containing the text of the
-survey questions and the allowed responses, respectively. The names
-must correspond to the names of variables in \code{data}. See
-\strong{Examples}.}
+\item{\code{questions, responses}}{Named lists containing the text of the survey
+questions and the allowed responses, respectively. The names must
+correspond to the names of variables in \code{data}. See \strong{Examples}. If
+these aren't provided then they will be created internally using all
+factor, character, and binary variables in \code{data}.}
 
 \item{\code{weights}}{Optionally, a vector of survey weights.}
 
@@ -158,50 +158,12 @@ vector of values to add to the data frame.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-add_mapped_data_column"></a>}}
-\if{latex}{\out{\hypertarget{method-add_mapped_data_column}{}}}
-\subsection{Method \code{add_mapped_data_column()}}{
-Add a column to the mapped data. This is primarily
-intended for internal use but may occasionally be useful.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SurveyData$add_mapped_data_column(name, value)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{name, value}}{The name of the new variable (a string) and the
-vector of values to add to the data frame.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-survey_data"></a>}}
 \if{latex}{\out{\hypertarget{method-survey_data}{}}}
 \subsection{Method \code{survey_data()}}{
 Access the data frame containing the sample data.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SurveyData$survey_data(key = TRUE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{key}}{Should the \code{.key} column be included? This column just
-indicates the original order of the rows and is primarily intended
-for internal use.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-mapped_data"></a>}}
-\if{latex}{\out{\hypertarget{method-mapped_data}{}}}
-\subsection{Method \code{mapped_data()}}{
-Access the data frame containing the mapped data.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SurveyData$mapped_data(key = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

@@ -75,7 +75,7 @@ q3 <- SurveyQuestion$new(
 
 # Create SurveyMap object
 # can add all questions at once or incrementally
-ex_map <- SurveyMap$new(samp_obj = feline_prefs, popn_obj = popn_obj, q1)
+ex_map <- SurveyMap$new(sample = feline_prefs, population = popn_obj, q1)
 print(ex_map)
 ex_map$validate()
 ex_map$add(q3)
@@ -155,9 +155,11 @@ fit_1$plot(estimates_popn)
 \item \href{#method-tabulate}{\code{SurveyMap$tabulate()}}
 \item \href{#method-fit}{\code{SurveyMap$fit()}}
 \item \href{#method-item_map}{\code{SurveyMap$item_map()}}
-\item \href{#method-samp_obj}{\code{SurveyMap$samp_obj()}}
-\item \href{#method-popn_obj}{\code{SurveyMap$popn_obj()}}
+\item \href{#method-sample}{\code{SurveyMap$sample()}}
+\item \href{#method-population}{\code{SurveyMap$population()}}
 \item \href{#method-poststrat_data}{\code{SurveyMap$poststrat_data()}}
+\item \href{#method-mapped_sample_data}{\code{SurveyMap$mapped_sample_data()}}
+\item \href{#method-mapped_population_data}{\code{SurveyMap$mapped_population_data()}}
 \item \href{#method-clone}{\code{SurveyMap$clone()}}
 }
 }
@@ -167,15 +169,15 @@ fit_1$plot(estimates_popn)
 \subsection{Method \code{new()}}{
 Create a new SurveyMap object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SurveyMap$new(samp_obj, popn_obj, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SurveyMap$new(sample, population, ...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{samp_obj}}{The \link{SurveyData} object corresponding to the sample data.}
+\item{\code{sample}}{The \link{SurveyData} object corresponding to the sample data.}
 
-\item{\code{popn_obj}}{The \link{SurveyData} object corresponding to the population data.}
+\item{\code{population}}{The \link{SurveyData} object corresponding to the population data.}
 
 \item{\code{...}}{\link{SurveyQuestion} objects.}
 }
@@ -329,22 +331,22 @@ Access the \code{item_map}
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-samp_obj"></a>}}
-\if{latex}{\out{\hypertarget{method-samp_obj}{}}}
-\subsection{Method \code{samp_obj()}}{
+\if{html}{\out{<a id="method-sample"></a>}}
+\if{latex}{\out{\hypertarget{method-sample}{}}}
+\subsection{Method \code{sample()}}{
 Access the \link{SurveyData} object containing the sample data
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SurveyMap$samp_obj()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SurveyMap$sample()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-popn_obj"></a>}}
-\if{latex}{\out{\hypertarget{method-popn_obj}{}}}
-\subsection{Method \code{popn_obj()}}{
+\if{html}{\out{<a id="method-population"></a>}}
+\if{latex}{\out{\hypertarget{method-population}{}}}
+\subsection{Method \code{population()}}{
 Access the \link{SurveyData} object containing the population data
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{SurveyMap$popn_obj()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{SurveyMap$population()}\if{html}{\out{</div>}}
 }
 
 }
@@ -352,11 +354,51 @@ Access the \link{SurveyData} object containing the population data
 \if{html}{\out{<a id="method-poststrat_data"></a>}}
 \if{latex}{\out{\hypertarget{method-poststrat_data}{}}}
 \subsection{Method \code{poststrat_data()}}{
-Access the poststratification data frame
+Access the poststratification data frame created by the \code{tabulate} method
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SurveyMap$poststrat_data()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-mapped_sample_data"></a>}}
+\if{latex}{\out{\hypertarget{method-mapped_sample_data}{}}}
+\subsection{Method \code{mapped_sample_data()}}{
+Access the data frame containing the mapped sample data
+created by the \code{mapping} method
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SurveyMap$mapped_sample_data(key = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{key}}{Should the \code{.key} column be included? This column just
+indicates the original order of the rows and is primarily intended
+for internal use.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-mapped_population_data"></a>}}
+\if{latex}{\out{\hypertarget{method-mapped_population_data}{}}}
+\subsection{Method \code{mapped_population_data()}}{
+Access the data frame containing the mapped population data
+created by the \code{mapping} method
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{SurveyMap$mapped_population_data(key = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{key}}{Should the \code{.key} column be included? This column just
+indicates the original order of the rows and is primarily intended
+for internal use.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-clone"></a>}}

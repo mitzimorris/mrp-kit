@@ -34,7 +34,7 @@
 #'     state = levels(nlp_survey$state),
 #'     y = c("no","yes")
 #'   ),
-#'   weights = nlp_survey$wt,
+#'   weights = nlp_survey$wt, # optional
 #'   design = list(ids =~1)
 #' )
 #' nlp_prefs$print()
@@ -58,11 +58,11 @@
 #'     education = levels(approx_voters_popn$education),
 #'     state = levels(approx_voters_popn$state)
 #'   ),
-#'   weights = approx_voters_popn$wt
+#'   weights = approx_voters_popn$wt # optional
 #' )
 #' popn_obj$print()
 #'
-#' q1 <- SurveyQuestion$new(
+#' q_age <- SurveyQuestion$new(
 #'   name = "age",
 #'   col_names = c("age","age_group"),
 #'   values_map = list(
@@ -70,19 +70,19 @@
 #'     "46-55" = "36-55", "56-65" = "56-65", "66-75" = "66+", "76-90" = "66+"
 #'   )
 #' )
-#' print(q1)
+#' print(q_age)
 #'
-#' q2 <- SurveyQuestion$new(
+#' q_party <- SurveyQuestion$new(
 #'   name = "party_pref",
 #'   col_names = c("vote_for","vote_pref"),
 #'   values_map = list("Neverland Labor Party" = "NLP", "NLP" = "NLP","Neverland Democrats" = "The Democrats","The Democrats" = "The Democrats")
 #' )
-#' q3 <- SurveyQuestion$new(
+#' q_gender <- SurveyQuestion$new(
 #'   name = "gender",
 #'   col_names = c("gender", "gender"),
 #'   values_map = list("male" = "m","female" = "f", "nonbinary" = "nb")
 #' )
-#' q4 <- SurveyQuestion$new(
+#' q_educ <- SurveyQuestion$new(
 #'   name = "highest_education",
 #'   col_names = c("highest_educ", "education"),
 #'   values_map = list("no high school" = "no high school",
@@ -91,39 +91,44 @@
 #'                     "4-year college" = "4-year college",
 #'                     "post-graduate" = "post-grad")
 #' )
-#' q5 <- SurveyQuestion$new(
+#' q_state <- SurveyQuestion$new(
 #'   name = "state",
 #'   col_names = c("state", "state"),
 #'   values_map = list("State A" = "A", "State B" = "B", "State C" = "C",
 #'                     "State D" = "D", "State E" = "E")
 #' )
 #'
-#' # Create SurveyMap object
-#' # can add all questions at once or incrementally
-#' ex_map <- SurveyMap$new(samp_obj = nlp_prefs, popn_obj = popn_obj, q1)
+#' # Create SurveyMap object adding all questions at once
+#' ex_map <- SurveyMap$new(
+#'   sample = nlp_prefs,
+#'   population = popn_obj,
+#'   q_age,
+#'   q_party,
+#'   q_gender,
+#'   q_educ,
+#'   q_state
+#' )
+#' print(ex_map) # or ex_map$print()
+#'
+#' # Or can add questions incrementally
+#' ex_map <- SurveyMap$new(sample = feline_prefs, population = popn_obj)
 #' print(ex_map)
-#' ex_map$validate()
-#' ex_map$add(q3)
+#'
+#' ex_map$add(q_age, q_party)
 #' print(ex_map)
-#' ex_map$delete(q3)
+#'
+#' ex_map$add(q_gender, q_educ, q_state)
 #' print(ex_map)
-#' ex_map$add(q3)
-#' ex_map$delete("gender")
-#' print(ex_map)
-#' ex_map$add(q2)
-#' print(ex_map)
-#' ex_map$replace(q1,q3)
-#' print(ex_map)
-#' ex_map$add(q1)
-#' print(ex_map)
-#' ex_map$validate()
+#'
+#' # Create the mapping between sample and population
 #' ex_map$mapping()
-#' ex_map$tabulate("age") # Just use age in the poststrat matrix
-#' ex_map$tabulate() # Use all variables in the map
 #'
+#' # Create the poststratification data frame using all variables in the mapping
+#' # (alternatively, can specify particular variables, e.g. tabulate("age"))
+#' ex_map$tabulate()
 #'
-#' #' Example rstanarm usage
-#' #' Returns a SurveyFit object
+#' # Example rstanarm usage
+#' # Returns a SurveyFit object
 #' fit_1 <- ex_map$fit(
 #'   fun = rstanarm::stan_glmer,
 #'   formula = y ~ (1|age) + (1|gender),
@@ -133,10 +138,15 @@
 #' )
 #'
 #' \dontrun{
-#' # Example brms usage
-#' # Returns a SurveyFit object
-#' # (not run because requires compilation)
+#' # Example lme4 usage
 #' fit_2 <- ex_map$fit(
+#'   fun = lme4::glmer,
+#'   formula = y ~ (1|age) + (1|gender),
+#'   family = "binomial"
+#' )
+#'
+#' # Example brms usage
+#' fit_3 <- ex_map$fit(
 #'   fun = brms::brm,
 #'   formula = y ~ (1|age) + (1|gender),
 #'   family = "bernoulli",
@@ -169,23 +179,25 @@
 SurveyMap <- R6::R6Class(
   classname = "SurveyMap",
   private = list(
-    samp_obj_ = NULL,
-    popn_obj_ = NULL,
+    sample_ = NULL,
+    population_ = NULL,
     item_map_ = list(),
-    poststrat_data_ = data.frame(NULL)
+    poststrat_data_ = data.frame(NULL),
+    mapped_sample_data_ = NULL,
+    mapped_population_data_ = NULL
   ),
   public = list(
 
     #' @description Create a new SurveyMap object
-    #' @param samp_obj The [SurveyData] object corresponding to the sample data.
-    #' @param popn_obj The [SurveyData] object corresponding to the population data.
+    #' @param sample The [SurveyData] object corresponding to the sample data.
+    #' @param population The [SurveyData] object corresponding to the population data.
     #' @param ... [SurveyQuestion] objects.
-    initialize = function(samp_obj, popn_obj, ...) {
-      if (!inherits(samp_obj, "SurveyData")) {
-        stop("samp_obj must be a SurveyData object.", call. = FALSE)
+    initialize = function(sample, population, ...) {
+      if (!inherits(sample, "SurveyData")) {
+        stop("'sample' must be a SurveyData object.", call. = FALSE)
       }
-      if (!inherits(popn_obj, "SurveyData")) {
-        stop("popn_obj must be a SurveyData object.", call. = FALSE)
+      if (!inherits(population, "SurveyData")) {
+        stop("'population' must be a SurveyData object.", call. = FALSE)
       }
 
       private$item_map_ <- list(...)
@@ -193,8 +205,10 @@ SurveyMap <- R6::R6Class(
         names(private$item_map_)[i] <- private$item_map_[[i]]$name()
       }
 
-      private$samp_obj_ <- samp_obj
-      private$popn_obj_ <- popn_obj
+      private$sample_ <- sample
+      private$population_ <- population
+      private$mapped_sample_data_ <- data.frame(.key = 1:nrow(sample$survey_data()))
+      private$mapped_population_data_ <- data.frame(.key = 1:nrow(population$survey_data()))
       invisible(self)
     },
 
@@ -226,8 +240,8 @@ SurveyMap <- R6::R6Class(
       for (i in 1:length(dots)) {
         ll_length <- length(private$item_map_)
         if (dots[[i]]$name() %in% names(private$item_map_)) {
-          stop("Survey label: ", dots[[i]]$name(), " already defined.  ",
-               "Use function 'replace' instead. ", call. = FALSE)
+          stop("Survey label '", dots[[i]]$name(), "' already defined.  ",
+               "Use 'replace' method instead.", call. = FALSE)
         }
         private$item_map_[[ll_length + 1]] <- dots[[i]]
         names(private$item_map_)[ll_length + 1] <- private$item_map_[[ll_length + 1]]$name()
@@ -248,7 +262,7 @@ SurveyMap <- R6::R6Class(
           loc_name <- tmp_list[[i]]
         }
         if (sum(loc_id) == 0) {
-          stop("Survey label: ", loc_name, " not defined.  ",
+          stop("Survey label '", loc_name, "' not defined.",
                call. = FALSE)
         } else {
           private$item_map_[[which(loc_id)]] <- NULL
@@ -269,69 +283,69 @@ SurveyMap <- R6::R6Class(
 
     #' @description Validate the mapping
     validate = function() {
-      samp_dfnames <- colnames(private$samp_obj_$survey_data(key = FALSE))
-      popn_dfnames <- colnames(private$popn_obj_$survey_data(key = FALSE))
+      samp_dfnames <- colnames(private$sample_$survey_data(key = FALSE))
+      popn_dfnames <- colnames(private$population_$survey_data(key = FALSE))
       samp_mapnames <- character(length(private$item_map_))
       popn_mapnames <- character(length(private$item_map_))
       for (j in 1:length(private$item_map_)) {
         samp_mapnames[j] <- private$item_map_[[j]]$col_names()[1]
         popn_mapnames[j] <- private$item_map_[[j]]$col_names()[2]
-        if (!is.factor(private$samp_obj_$survey_data()[, samp_mapnames[j]])) {
-          private$samp_obj_$add_survey_data_column(
+        if (!is.factor(private$sample_$survey_data()[, samp_mapnames[j]])) {
+          private$sample_$add_survey_data_column(
             name = samp_mapnames[j],
-            value = as.factor(private$samp_obj_$survey_data()[, samp_mapnames[j]])
+            value = as.factor(private$sample_$survey_data()[, samp_mapnames[j]])
           )
-          warning("Converting ", samp_mapnames[j], "into a factor with levels ",
-                  paste(levels(private$samp_obj_$survey_data()[, samp_mapnames[j]]), collapse = ", "),
+          warning("Converting '", samp_mapnames[j], "' into a factor with levels ",
+                  paste(levels(private$sample_$survey_data()[, samp_mapnames[j]]), collapse = ", "),
                   call. = FALSE)
         }
-        if (!is.factor(private$popn_obj_$survey_data()[, popn_mapnames[j]])) {
-          private$popn_obj_$add_survey_data_column(
+        if (!is.factor(private$population_$survey_data()[, popn_mapnames[j]])) {
+          private$population_$add_survey_data_column(
             name = popn_mapnames[j],
-            value = as.factor(private$popn_obj_$survey_data()[, popn_mapnames[j]])
+            value = as.factor(private$population_$survey_data()[, popn_mapnames[j]])
           )
-          warning("Converting ", popn_mapnames[j], "into a factor with levels ",
-                  paste(levels(private$popn_obj_$survey_data()[, popn_mapnames[j]]), collapse = ", "),
+          warning("Converting '", popn_mapnames[j], "' into a factor with levels ",
+                  paste(levels(private$population_$survey_data()[, popn_mapnames[j]]), collapse = ", "),
                   call. = FALSE)
         }
         levels_map_samp <- levels(private$item_map_[[j]]$values()[, 1])
         levels_map_popn <- levels(private$item_map_[[j]]$values()[, 2])
-        levels_data_samp <- levels(private$samp_obj_$survey_data()[, samp_mapnames[j]])
-        levels_data_popn <- levels(private$popn_obj_$survey_data()[, popn_mapnames[j]])
+        levels_data_samp <- levels(private$sample_$survey_data()[, samp_mapnames[j]])
+        levels_data_popn <- levels(private$population_$survey_data()[, popn_mapnames[j]])
         if (!samp_mapnames[j] %in% samp_dfnames) {
-          stop("Variable ", samp_mapnames[j], " not in sample", call. = FALSE)
+          stop("Variable '", samp_mapnames[j], "' not in sample", call. = FALSE)
         }
         if (!popn_mapnames[j] %in% popn_dfnames) {
-          stop("Variable ", popn_mapnames[j], " not in population",
+          stop("Variable '", popn_mapnames[j], "' not in population",
                call. = FALSE)
         }
         if (sum(!levels_map_samp %in% levels_data_samp) > 0) {
-          stop("Levels in ",samp_mapnames[j]," ",
+          stop("Levels in '",samp_mapnames[j],"' ",
                paste(levels_map_samp[!levels_map_samp %in% levels_data_samp], collapse = ", "),
                " are included in the map but are not in the sample",
                call. = FALSE)
         }
         if (sum(!levels_data_samp %in% levels_map_samp) > 0) {
-          stop("Levels in ",samp_mapnames[j], " ",
+          stop("Levels in '",samp_mapnames[j], "' ",
                paste(levels_data_samp[!levels_data_samp %in% levels_map_samp], collapse = ", "),
                " are included in the sample but are not in the map",
                call. = FALSE)
         }
         if (sum(!levels_map_popn %in% levels_data_popn) > 0) {
-          stop("Levels in ",popn_mapnames[j], " ",
+          stop("Levels in '",popn_mapnames[j], "' ",
                paste(levels_map_popn[!levels_map_popn %in% levels_data_popn], collapse = ", "),
                " are included in the map but are not in the population data",
                call. = FALSE)
         }
         if (sum(!levels_data_popn %in% levels_map_popn)>0) {
-          stop("Levels in ",popn_mapnames[j], " ",
+          stop("Levels in '",popn_mapnames[j], "' ",
                paste(levels_data_popn[!levels_data_popn %in% levels_map_popn], collapse = ", "),
                " are included in the population data but are not in the map",
                call. = FALSE)
         }
       }
       if (sum(popn_mapnames %in% popn_dfnames) < length(popn_dfnames)) {
-        warning("Variable(s) ", paste(popn_dfnames[!popn_dfnames %in% popn_mapnames], collapse = ", "),
+        warning("Variable(s) ", paste(sQuote(popn_dfnames[!popn_dfnames %in% popn_mapnames], q = "'"), collapse = ", "),
                 " are available in the population but won't be used in the model ",
                 call. = FALSE)
       }
@@ -352,6 +366,7 @@ SurveyMap <- R6::R6Class(
         new_varname <- private$item_map_[[j]]$name()
         new_levels_samp <- character(length(levels_map_samp))
         new_levels_popn <- character(length(levels_map_popn))
+        multiple_collapse <- rep(x = FALSE, length(levels_map_samp))
         for (k in 1:length(levels_map_samp)) {
           is_samp_unique <- sum(levels_map_samp %in% levels_map_samp[k]) == 1
           is_popn_unique <- sum(levels_map_popn %in% levels_map_popn[k]) == 1
@@ -367,11 +382,28 @@ SurveyMap <- R6::R6Class(
             names(new_levels_samp)[k] <- as.character(levels_map_samp[k])
             names(new_levels_popn)[k] <- as.character(levels_map_samp[k])
           } else if (!is_samp_unique & !is_popn_unique) {
-            stop("Mapping can only handle many to one mappings.", call. = FALSE)
+            multiple_collapse[k] = TRUE
           }
         }
-        private$samp_obj_$add_mapped_data_column(new_varname, forcats::fct_recode(private$samp_obj_$survey_data()[[samp_mapnames]], !!!new_levels_samp))
-        private$popn_obj_$add_mapped_data_column(new_varname, forcats::fct_recode(private$popn_obj_$survey_data()[[popn_mapnames]], !!!new_levels_popn))
+        if (sum(multiple_collapse) > 0) {
+          dup_labels_popn <- levels_map_popn[duplicated(levels_map_popn)]
+          dup_labels_samp <- levels_map_samp[duplicated(levels_map_samp)]
+
+          dup_labels_samp <- levels_map_samp %in% dup_labels_samp
+          dup_labels_popn <- levels_map_popn %in% dup_labels_popn
+
+          potential_indices <- dup_labels_samp + dup_labels_popn > 0
+          if (sum(multiple_collapse[potential_indices] > 0)) {
+            collapsed_names <- paste0(unique(levels_map_samp[potential_indices]), collapse = " + ")
+            names(new_levels_popn)[potential_indices] <- collapsed_names
+            names(new_levels_samp)[potential_indices] <- collapsed_names
+          } else {
+            stop("There is an error with the mapping. Please investigate further.")
+          }
+
+        }
+        private$mapped_sample_data_[[new_varname]] <- forcats::fct_recode(private$sample_$survey_data()[[samp_mapnames]], !!!new_levels_samp)
+        private$mapped_population_data_[[new_varname]] <- forcats::fct_recode(private$population_$survey_data()[[popn_mapnames]], !!!new_levels_popn)
       }
       invisible(self)
     },
@@ -387,8 +419,8 @@ SurveyMap <- R6::R6Class(
         stop("At least one poststratification variable doesn't correspond to the map.", call. = FALSE)
       }
       private$poststrat_data_ <-
-        private$popn_obj_$mapped_data() %>%
-        dplyr::mutate(wts = private$popn_obj_$weights()) %>%
+        private$mapped_population_data_ %>%
+        dplyr::mutate(wts = private$population_$weights()) %>%
         dplyr::group_by_at(dplyr::all_of(grouping_vars)) %>%
         dplyr::summarize(N_j = sum(wts), .groups = 'drop')
       invisible(self)
@@ -417,18 +449,47 @@ SurveyMap <- R6::R6Class(
         stop("Currently only binomial and bernoulli models are supported.",
              call. = FALSE)
       }
-      if (is.null(private$samp_obj_$mapped_data())) {
+      if (identical(colnames(private$mapped_sample_data_), ".key")) {
         stop("Mapped data not found. ",
              "Please call the mapping() method before fitting a model.",
              call. = FALSE)
       }
+      if (nrow(private$poststrat_data_) == 0) {
+        stop("Post-stratification data not found. ",
+             "Please call the tabulate() method before fitting a model.",
+             call. = FALSE)
+      }
 
-      # TODO: error if variables in formula aren't in data
+      admin_package <- as.character(getNamespaceName(environment(fun)))
+      if (!any(admin_package %in% c("lme4","brms","rstanarm"))){
+        warning("Only rstanarm, brms and lme4 are supported natively. ",
+                "Other modeling tools will need a custom population_predict() method.",
+                call. = FALSE)
+      }
+
       formula <- as.formula(formula)
-      mapped_data <- private$samp_obj_$mapped_data()
-      need_vars <- setdiff(all.vars(formula), colnames(mapped_data))
-      y_and_x <- private$samp_obj_$survey_data()[, need_vars, drop = FALSE]
+      mapped_data <- private$mapped_sample_data_
+      rhs_vars <- all.vars(formula[-2])
+      lhs_vars <- all.vars(update(formula, "~0"))
 
+      if (sum(!rhs_vars %in% colnames(mapped_data))) {
+        stop("Not all variables available in the data. ",
+             paste("Missing vars: ", paste(rhs_vars[!rhs_vars %in% colnames(mapped_data)], collapse = ', ')),
+             call. = FALSE)
+      }
+      if (sum(!lhs_vars %in% colnames(private$sample_$survey_data()))) {
+        stop("Outcome variable not present in data. ",
+             call. = FALSE)
+      }
+      if (sum(!rhs_vars %in% colnames(private$poststrat_data_))) {
+        stop("Predictor variables not known in population. ",
+             "Please ensure all predictor variables are mapped from sample to population. ",
+             paste("Missing vars:", paste(rhs_vars[!rhs_vars %in% colnames(private$poststrat_data_)], collapse = ', ')),
+             call. = FALSE)
+      }
+
+      need_vars <- setdiff(all.vars(formula), colnames(mapped_data))
+      y_and_x <- private$sample_$survey_data()[, need_vars, drop = FALSE]
       args$formula <- formula
       args$data <- cbind(mapped_data, y_and_x)
       fit <- do.call(fun, args)
@@ -439,18 +500,44 @@ SurveyMap <- R6::R6Class(
     item_map = function() private$item_map_,
 
     #' @description Access the [SurveyData] object containing the sample data
-    samp_obj = function() private$samp_obj_,
+    sample = function() private$sample_,
 
     #' @description Access the [SurveyData] object containing the population data
-    popn_obj = function() private$popn_obj_,
+    population = function() private$population_,
 
-    #' @description Access the poststratification data frame
+    #' @description Access the poststratification data frame created by the `tabulate` method
     poststrat_data = function() {
       if (is.null(private$poststrat_data_)) {
         stop("Please call the tabulate() method before accessing the poststrat data.",
              call. = FALSE)
       }
       private$poststrat_data_
+    },
+
+    #' @description Access the data frame containing the mapped sample data
+    #'   created by the `mapping` method
+    #' @param key Should the `.key` column be included? This column just
+    #'   indicates the original order of the rows and is primarily intended
+    #'   for internal use.
+    mapped_sample_data = function(key = TRUE) {
+      if (key) {
+        private$mapped_sample_data_
+      } else {
+        private$mapped_sample_data_[, colnames(private$mapped_sample_data_) != ".key", drop = FALSE]
+      }
+    },
+
+    #' @description Access the data frame containing the mapped population data
+    #'   created by the `mapping` method
+    #' @param key Should the `.key` column be included? This column just
+    #'   indicates the original order of the rows and is primarily intended
+    #'   for internal use.
+    mapped_population_data = function(key = TRUE) {
+      if (key) {
+        private$mapped_population_data_
+      } else {
+        private$mapped_population_data_[, colnames(private$mapped_population_data_) != ".key", drop = FALSE]
+      }
     }
   )
 )
