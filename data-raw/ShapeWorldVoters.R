@@ -44,7 +44,7 @@ get_pop_sample <- function(data, n) {
 }
 
 ### create the survey data
-nlp_survey <- get_sample(popn,500)
+bp_survey <- get_sample(popn,500)
 
 ### create the approx.population data
 approx_voters_popn <- get_pop_sample(popn, 5000) %>%
@@ -73,22 +73,22 @@ approx_voters_popn$wt <- weights(wts_trim_approx_popn)
 #### Voters Survey ####
 
 # Create weights #
-nlp_survey$wt = 1
+bp_survey$wt = 1
 
-svy_design_nlp_survey <- svydesign(ids=~1,weights = ~wt, data= nlp_survey)
+svy_design_bp_survey <- svydesign(ids=~1,weights = ~wt, data= bp_survey)
 
-rkd_obj_nlp_survey <- rake(design = svy_design_nlp_survey, sample.margins = list(
+rkd_obj_bp_survey <- rake(design = svy_design_bp_survey, sample.margins = list(
   ~ gender, ~ age_group, ~ vote_for, ~ education, ~ state),
   population.margins = list(gender_margin,age_margin, vote_margin,
                             education_margin, state_margin))
-wts_trim_nlp_survey <- trimWeights(rkd_obj_nlp_survey,
-                                   upper = quantile(weights(rkd_obj_nlp_survey),.975))
-nlp_survey$wt <- weights(wts_trim_nlp_survey)
+wts_trim_bp_survey <- trimWeights(rkd_obj_bp_survey,
+                                   upper = quantile(weights(rkd_obj_bp_survey),.975))
+bp_survey$wt <- weights(wts_trim_bp_survey)
 
 
 # Adjust measurement  #
 
-nlp_survey <- nlp_survey %>%
+bp_survey <- bp_survey %>%
   select(-S_inclusion_prob) %>%
   mutate_at(c("age_group", "gender", "vote_for", "education", "state" ,"y"), as.factor) %>%
   mutate(age =fct_recode(age_group, `18-25` = "1", `26-35` = "2",
@@ -98,10 +98,10 @@ nlp_survey <- nlp_survey %>%
                              "female" = "2",
                              "nonbinary" = "3"),
          vote_for = fct_recode(vote_for,
-                               "Neverland Labor Party" = "1",
-                               "NLP" = "2",
-                               "Neverland Democrats" = "3",
-                               "The Democrats" = "4"),
+                               "Box Party" = "1",
+                               "BP" = "2",
+                               "Circle Party" = "3",
+                               "CP" = "4"),
          highest_educ = fct_recode(education,
                                "no high school" = "1",
                                "high school" = "2",
@@ -126,10 +126,10 @@ approx_voters_popn <- approx_voters_popn %>%
                                `36-55` = "3",`36-55` = "4",
                                `56-65` = "5", `66+` = "6", `66+` = "7"),
          gender = fct_recode(gender, "m" = "1", "f" = "2", "nb" = "3"),
-         vote_pref = fct_recode(vote_for, "NLP" = "1",
-                                "NLP" = "2",
-                                "The Democrats" = "3",
-                                "The Democrats" = "4"),
+         vote_pref = fct_recode(vote_for, "BP" = "1",
+                                "BP" = "2",
+                                "CP" = "3",
+                                "CP" = "4"),
          education = fct_recode(education,
                                 "no high school" = "1",
                                 "high school" = "2",
@@ -145,4 +145,4 @@ approx_voters_popn <- approx_voters_popn %>%
                             "E" = "5")) %>%
   select(c(age_group, gender, vote_pref, wt, education, state))
 
-usethis::use_data(nlp_survey, approx_voters_popn, overwrite = TRUE)
+usethis::use_data(bp_survey, approx_voters_popn, overwrite = TRUE)

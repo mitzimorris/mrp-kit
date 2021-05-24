@@ -46,17 +46,17 @@ A more detailed example of this workflow follows.
 
 ## Prepare the data
 
-In this vignette we simulate survey and post-stratification datasets. These datasets display the preference of voters to the Neverland Labor Party (NLP), a political party in a fake country, Neverland, along with demographic variables, age and gender. The population is designed using `declare_population` from `DeclareDesign` (Blair, Cooper, Coppock & Humphreys, 2019) to set the features in the population.
+In this vignette we simulate survey and post-stratification datasets. These datasets display the preference of voters to the Box Party (BP), a political party in a fake country, Shape World, along with demographic variables, age and gender. The population is designed using `declare_population` from `DeclareDesign` (Blair, Cooper, Coppock & Humphreys, 2019) to set the features in the population.
 
 We can see every variable in the survey data as follows:
 
-```{r nlp-survey}
-head(nlp_survey)
+```{r bp-survey}
+head(bp_survey)
 ```
 
 Additionally, the approximate population can be seen as follows:
 
-```{r nlp-popn}
+```{r bp-popn}
 head(approx_voters_popn)
 ```
 
@@ -83,14 +83,14 @@ After `SurveyData` is initialized, we can print it using the `print` method as s
 **Create the `SurveyData` object for the survey data set**
 
 ```{r survey-object}
-nlp_pref <- SurveyData$new(
-  data = nlp_survey,
+bp_pref <- SurveyData$new(
+  data = bp_survey,
   questions = list(age = "Please identify your age group",
                 gender = "Please select your gender",
                 vote_for = "Which party did you vote for in the 2018 election?",
                 highest_educ = "Please identify your completed highest education",
                 state = "Which State do you live in?",
-                y = "If today is election day, will you vote for the NLP?"),
+                y = "If today is election day, will you vote for the BP?"),
   responses = list(age = levels(nlp_survey$age),
                    gender = levels(nlp_survey$gender),
                    vote_for = levels(nlp_survey$vote_for),
@@ -101,7 +101,7 @@ nlp_pref <- SurveyData$new(
   design = formula("~."))
 
 # print it
-nlp_pref$print()
+bp_pref$print()
 ```
 
 **Create the `SurveyData` object for the post-stratification dataset**
@@ -131,7 +131,7 @@ popn_obj$print()
 
 ## Match the value between survey and post-stratification object using `SurveyQuestion$new`
 
-From the metadata above, we can see that the survey and post-stratification data have different column labels, so to do the level/categorization of age, gender, party preference, highest level of education, and state. For example in `nlp_pref`, the column label for age is `age`, whereas in `popn_obj`, the column label for this variable is `age_group`. This variable also has different levels, `nlp_pref` has seven levels of age, whereas `popn_obj` has only four levels of age.
+From the metadata above, we can see that the survey and post-stratification data have different column labels, so to do the level/categorization of age, gender, party preference, highest level of education, and state. For example in `bp_pref`, the column label for age is `age`, whereas in `popn_obj`, the column label for this variable is `age_group`. This variable also has different levels, `bp_pref` has seven levels of age, whereas `popn_obj` has only four levels of age.
 
 These column labels and levels should be aligned to be able to perform MRP. With the `SurveyQuestion$new` method, we are able to align the names of the columns and mapping their values. Further, if there is a meaningful ordering over the values, they should be sorted over that order, either descending or ascending.
 
@@ -156,7 +156,7 @@ q1 <- SurveyQuestion$new(
 q2 <- SurveyQuestion$new(
  name = "party_pref",
  col_names = c("vote_for","vote_pref"),
- values_map = list("Neverland Labor Party" = "NLP", "NLP" = "NLP", "Neverland Democrats" = "The Democrats", "The Democrats" = "The Democrats"))
+ values_map = list("BoxParty" = "BP", "BP" = "BP", "Circle Party" = "CP", "CP" = "CP"))
 
 # create SurveyQuestion$object for the question related to gender
 q3 <- SurveyQuestion$new(
@@ -190,7 +190,7 @@ q5 <- SurveyQuestion$new(
 
 ## Using the SurveyMap object
 
-The `SurveyMap` object holds the mapping between a set of items in the survey and post-stratification datasets. It takes the `SurveyData` objects, which in this case are `nlp_pref` and `popn_obj`, together with labels and values that have been matched and provided in the `SurveyQuestion` object. The mapped object would specify the correspondences in the variables that will be used when fitting the model.
+The `SurveyMap` object holds the mapping between a set of items in the survey and post-stratification datasets. It takes the `SurveyData` objects, which in this case are `bp_pref` and `popn_obj`, together with labels and values that have been matched and provided in the `SurveyQuestion` object. The mapped object would specify the correspondences in the variables that will be used when fitting the model.
 
 The `SurveyMap` object has various methods as listed as follows:
 
@@ -207,7 +207,7 @@ The `SurveyMap` object has various methods as listed as follows:
 ```{r map-object}
 
 # create a new SurveyMap object
-ex_map <- SurveyMap$new(samp_obj = nlp_pref, popn_obj = popn_obj, q1)
+ex_map <- SurveyMap$new(samp_obj = bp_pref, popn_obj = popn_obj, q1)
 
 # validate the map
 ex_map$validate()
@@ -321,7 +321,7 @@ In this stage, we already have the fitted model object i.e. `fit1` and `fit2`. T
 
 After creating the `SurveyFit` object, we are able to generate the predicted probability of each post-stratification cell using the `population_predict` method. It returns a matrix with rows that correspond to the columns of post-stratification data and columns that correspond to the posterior samples.
 
-Furthermore, if the model fitting is done with one of the built-in function (`rstanarm::stan_glmer`, `lme4::glmer`, `brms::brm`), then this method does not take any arguments. However, if you used a customized function in the model fitting, then this method takes two argument. The first is the fitted model object, and the second is the post-stratification dataframe. In this example, we will show how to use this method for the `fit1` object.
+Furthermore, if the model fitting is done with one of the built-in function (`rstanarm::stan_glmer`, `lme4::glmer`, `brms::brm`), then this method does not take any arguments. However, if you used a customized function in the model fitting, then this method takes two argument. The first is the fitted model object, and the second is the post-stratification data frame. In this example, we will show how to use this method for the `fit1` object.
 
 ```{r predict}
 # predict the probability of voting for the NLP using the fit1 model
@@ -361,15 +361,15 @@ plot_age <- fit1$plot(age_preds)
 plot_age
 ```
 
-The plot above shows the distribution of NLP support for each age-group. The plot implies that people who are aged 56-65 are most likely to vote for the NLP.
+The plot above shows the distribution of BP support for each age-group. The plot implies that people who are aged 56-65 are most likely to vote for the BP.
 
-The next plot displays the probability of voting for the NLP by state. We learn that the probability of the NLP winning the election is high since the majority of people (around 75%) in all of the states in Neverland vote for that party. Note that this violin plot is generated using `ggplot2` (Wickham, 2016). Hence, it could be modified the same way `ggplot2`'s plot modified. For example, here, we can add title and change the theme of the plot.
+The next plot displays the probability of voting for the BP by state. We learn that the probability of the BP winning the election is high since the majority of people (around 75%) in all of the states in Shape World vote for that party. Note that this violin plot is generated using `ggplot2` (Wickham, 2016). Hence, it could be modified the same way `ggplot2`'s plot modified. For example, here, we can add title and change the theme of the plot.
 
 
 ```{r state-vis}
 library(ggplot2)
 plot_state <- fit1$plot(state_preds) +
-  ggtitle("Probability of voting the NLP by state") +
+  ggtitle("Probability of voting the BP by state") +
   theme_bw()
 plot_state
 ```

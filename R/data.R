@@ -29,13 +29,13 @@
 "approx_popn"
 
 
-#' A Simulated Data of NLP Voters Survey
+#' A Simulated Data of Box Party Voters Survey
 #'
-#' This is a simulated survey of voter preferences for the Neverland Labor Party
-#' (NLP) that also includes several demographic variables. We use this data
+#' This is a simulated survey of voter preferences for the Box Party
+#' (BP) that also includes several demographic variables. We use this data
 #' throughout the documentation to demonstrate the usage of the package.
 #'
-#' @source Created in NeverlandVoters.R
+#' @source Created in ShapeWorldVoters.R
 #'
 #' @format A data frame with columns:
 #'
@@ -45,18 +45,18 @@
 #'  \item{vote_for}{Party voted for in the 2016 election}
 #'  \item{highest_educ}{Highest grade of education completed}
 #'  \item{state}{State}
-#'  \item{y}{Preference for NLP in 2020 election}
+#'  \item{y}{Preference for BP in 2020 election}
 #'  \item{wt}{Raked and trimmed survey weight}
 #' }
 #' @examples
 #'
-#'  nlp_survey
+#'  bp_survey
 #'
-"nlp_survey"
+"bp_survey"
 
 #' Simulated approximate population data for the NLP Voters survey (modeled after ACS)
 #'
-#' @source Created in NeverlandVoters.R
+#' @source Created in ShapeWorldVoters.R
 #'
 #' @format A data frame with columns:
 #'
