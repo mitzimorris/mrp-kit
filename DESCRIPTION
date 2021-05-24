@@ -1,11 +1,30 @@
 Package: mrpkit
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Multilevel Regression with Post-Stratification
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Authors@R: c(
+    person(given = "Lauren",
+           family = "Kennedy",
+           role = c("aut", "cre"),
+           email = "lauren.kennedy729@gmail.com"),
+    person(given = "Jonah",
+           family = "Gabry",
+           role = c("aut"),
+           email = "jsg2201@columbia.edu"),
+    person(given = "Mitzi",
+           family = "Morris",
+           role = c("aut")),
+    person(given = "Dewi",
+           family = "Amaliah",
+           role = c("aut")),
+    person(given = "Rohan",
+           family = "Alexander",
+           role = c("aut"),
+           email = "rohan.alexander@utoronto.ca")
+           )
+Description: Conducts multilevel regression with post-stratification in an opinionated 
+    and specific way. Users specify two datasets (sample and population), establish 
+    a correspondence between them, and then conduct analysis.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -22,7 +41,8 @@ Suggests:
     lme4,
     merTools,
     knitr,
-    rmarkdown
+    rmarkdown,
+    vdiffr
 Roxygen: list(markdown = TRUE)
 Depends: 
     R (>= 2.10)

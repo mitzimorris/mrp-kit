@@ -1,0 +1,18 @@
+Survey with 500 observations, 4 questions 
+Independent Sampling design (with replacement) 
+
+Column label: age1 
+Question: Please identify your age group 
+Allowed answers: 18-25, 26-35, 36-45, 46-55, 56-65, 66-75, 76-90 
+
+Column label: gender 
+Question: Please select your gender 
+Allowed answers: male, female, nonbinary 
+
+Column label: pet_own 
+Question: Which pet do you own? 
+Allowed answers: cat, kitten, dog, puppy 
+
+Column label: y 
+Question: Response 
+Allowed answers: no, yes 

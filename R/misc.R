@@ -35,13 +35,13 @@ family_is_binomial <- function(x) {
 #' @param by The grouping variables
 #' @return A table of size nlevels by 3 (level, estimate, sd).
 create_wtd_ests <- function(fit_obj, outcome, by = NULL) {
-  weights <- fit_obj$map()$samp_obj()$weights()
+  weights <- fit_obj$map()$sample()$weights()
   if (is.null(weights)) {
     stop("Sample weights must be present", call. = FALSE)
   }
-  design <- fit_obj$map()$samp_obj()$design()
-  merged_data <- merge(fit_obj$map()$samp_obj()$mapped_data(),
-                       fit_obj$map()$samp_obj()$survey_data()[c(outcome,".key")],
+  design <- fit_obj$map()$sample()$design()
+  merged_data <- merge(fit_obj$map()$mapped_sample_data(),
+                       fit_obj$map()$sample()$survey_data()[c(outcome,".key")],
                        by = ".key")
   svy_dsn <- do.call(survey::svydesign, c(design, list(weights = weights, data = merged_data)))
   if (is.null(by)) {
@@ -67,7 +67,8 @@ create_wtd_ests <- function(fit_obj, outcome, by = NULL) {
 #' Generate approximate samples of predicted probabilities from a binomial
 #' `glmerMod` object.
 #'
-#' @noRd
+#' @export
+#' @keywords internal
 #' @param object A binomial model fit using `lme4::glmer()`.
 #' @param newdata The data to use.
 #' @param nsamples Number of samples to generate.

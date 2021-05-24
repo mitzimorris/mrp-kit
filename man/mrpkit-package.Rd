@@ -4,9 +4,22 @@
 \name{mrpkit-package}
 \alias{mrpkit}
 \alias{mrpkit-package}
-\title{mrpkit: What the Package Does (Title Case)}
+\title{mrpkit: Multilevel Regression with Post-Stratification}
 \description{
-More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Conducts multilevel regression with post-stratification in an opinionated 
+    and specific way. Users specify two datasets (sample and population), establish 
+    a correspondence between them, and then conduct analysis.
+}
+\author{
+\strong{Maintainer}: Lauren Kennedy \email{lauren.kennedy729@gmail.com}
+
+Authors:
+\itemize{
+  \item Jonah Gabry \email{jsg2201@columbia.edu}
+  \item Mitzi Morris
+  \item Dewi Amaliah
+  \item Rohan Alexander \email{rohan.alexander@utoronto.ca}
+}
+
 }
 \keyword{internal}

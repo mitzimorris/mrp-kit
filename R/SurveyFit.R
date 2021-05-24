@@ -46,20 +46,21 @@ SurveyFit <- R6::R6Class(
 
     #' @description Use fitted model to add predicted probabilities to post-stratification dataset.
     #' @param fun The function to use to generate the predicted probabilities.
-    #'   This should only be specified if using a custom model fitting function.
+    #'   This should only be specified if you used a model fitting function
+    #'   not natively supported by \pkg{mrpkit}.
     #'   For models fit using \pkg{rstanarm}, \pkg{brms}, or \pkg{lme4}, `fun`
-    #'   is handled automatically. If `fun` is a custom function then the first
-    #'   argument should take in the fitted model object and the second argument
-    #'   should take in the poststratification data frame. The
-    #'   function must return a matrix with rows corresponding to the columns of
-    #'   the poststratification data and columns corresponding to simulations.
-    #' @param ... Arguments other than the fitted model and poststratification
-    #'   data frame to pass to `fun`.
+    #'   is handled automatically. If `fun` is specified then:
+    #'   * the first argument should be the fitted model object
+    #'   * the second argument should be the poststratification data frame
+    #'   * it can take an arbitrary number of other arguments
+    #'   * the returned object should match the specifications in the 'Returns'
+    #'    section below in order to be compatible with subsequent methods
+    #' @param ... Arguments other than the fitted model object and
+    #'   poststratification data frame to pass to `fun`.
     #' @return A matrix with rows corresponding to poststratification cells and
     #'   columns corresponding to posterior samples (or approximate ones
     #'   in the case of \pkg{lme4} models).
-    #'
-    population_predict = function(fun = NULL, ...) {
+    population_predict = function(..., fun = NULL) {
       args <- list(...)
       if (!is.null(args$newdata) && is.null(fun)) {
         stop("The 'newdata' argument should not be specified.",
@@ -73,7 +74,7 @@ SurveyFit <- R6::R6Class(
       poststrat <- private$map_$poststrat_data()
 
       if (is.null(fun)) {
-        if ("stanreg" %in% class(private$fit_)){
+        if ("stanreg" %in% class(private$fit_)) {
           require_suggested_package("rstanarm", "2.21.0")
           return(
             t(suppressMessages(rstanarm::posterior_linpred(
@@ -83,8 +84,7 @@ SurveyFit <- R6::R6Class(
               ...
             )))
           )
-        }
-        if ("brmsfit" %in% class(private$fit_)){
+        } else if ("brmsfit" %in% class(private$fit_)) {
           require_suggested_package("brms")
           return(
             t(brms::posterior_epred(
@@ -98,8 +98,7 @@ SurveyFit <- R6::R6Class(
               ...
             ))
           )
-        }
-        if ("glmerMod" %in% class(private$fit_)) {
+        } else if ("glmerMod" %in% class(private$fit_)) {
           require_suggested_package("lme4")
           return(
             sim_posterior_probs(
@@ -108,6 +107,9 @@ SurveyFit <- R6::R6Class(
               ...
             )
           )
+        } else {
+          stop("Custom population_predict method required. Please specifiy 'fun'.",
+               call. = FALSE)
         }
       } else {
         fun <- match.fun(fun)
@@ -132,7 +134,7 @@ SurveyFit <- R6::R6Class(
         if (length(by) != 1) {
           stop("Currently only one variable can be named in 'by'.", call. = FALSE)
         }
-        rotate_levels <- levels(private$map_$samp_obj()$mapped_data()[, by])
+        rotate_levels <- levels(private$map_$mapped_sample_data()[, by])
         out <- expand.grid(by = rotate_levels, draw = 1:ncol(poststrat_estimates), value = NA)
         colnames(out)[1] <- by
         for (focus_level in rotate_levels){
@@ -147,31 +149,31 @@ SurveyFit <- R6::R6Class(
     },
 
     plot = function(aggregated_estimates, weights = TRUE) {
-      if (dim(aggregated_estimates)[2] > 2){
+      if (ncol(aggregated_estimates) > 2) {
         focus_var <- colnames(aggregated_estimates)[1]
         which_q <- private$map_$item_map()[[focus_var]]$col_names()[1]
-        svy_q <- private$map_$samp_obj()$questions()[[which_q]]
+        svy_q <- private$map_$sample()$questions()[[which_q]]
         gg <- ggplot2::ggplot(aggregated_estimates) +
           ggplot2::aes(x = .data[[focus_var]], y = .data[["value"]]) +
           ggplot2::geom_violin(fill = "darkblue", alpha = .3) +
-          ggplot2::scale_y_continuous(limits = c(0,1), expand = c(0, 0)) +
+          ggplot2::scale_y_continuous(limits = c(0, 1.05), expand = c(0, 0)) +
           ggplot2::xlab(svy_q)
       } else {
         model_fit <- private$fit_
         lhs_var <- as.character(formula(model_fit))[[2]]
-        svy_q <- private$map_$samp_obj()$questions()[[lhs_var]]
+        svy_q <- private$map_$sample()$questions()[[lhs_var]]
         gg <- ggplot2::ggplot(aggregated_estimates) +
           ggplot2::aes(x = .data[["value"]], y = ggplot2::after_stat(scaled)) +
           ggplot2::geom_density(fill = "darkblue", alpha = .3, ) +
-          ggplot2::scale_x_continuous(limits = c(0,1), expand = c(0, 0)) +
-          ggplot2::scale_y_continuous(limits = c(0,1), expand = c(0, 0)) +
+          ggplot2::scale_x_continuous(limits = c(0, 1), expand = c(0, 0)) +
+          ggplot2::scale_y_continuous(limits = c(0, 1.05), expand = c(0, 0)) +
           ggplot2::xlab(svy_q)
       }
 
       if (weights) {
         model_fit <- private$fit_
         lhs_var <- as.character(formula(model_fit))[[2]]
-        if (dim(aggregated_estimates)[2] > 2) {
+        if (ncol(aggregated_estimates) > 2) {
           by_var <- colnames(aggregated_estimates)[1]
           wtd_ests <- create_wtd_ests(self, lhs_var, by=by_var)
           gg <- gg +
@@ -187,10 +189,9 @@ SurveyFit <- R6::R6Class(
           gg <- gg +
             ggplot2::geom_vline(data = wtd_ests, ggplot2::aes(xintercept = .data[["mean"]])) +
             ggplot2::annotate("rect",
-              xmin = wtd_ests$mean - 1.96*wtd_ests$sd, xmax = wtd_ests$mean + 1.96*wtd_ests$sd,
-              ymin = 0, ymax = 1,
-              alpha = .5, fill = "grey"
-            )
+                              xmin = wtd_ests$mean - 1.96*wtd_ests$sd, xmax = wtd_ests$mean + 1.96*wtd_ests$sd,
+                              ymin = 0, ymax = 1.05,
+                              alpha = .5, fill = "grey")
         }
       }
       gg
