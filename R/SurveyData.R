@@ -10,30 +10,30 @@
 #'
 #' @examples
 #'
-#' head(nlp_survey)
-#' nlp_prefs <- SurveyData$new(
-#'   data = nlp_prefs,
+#' head(bp_survey)
+#' bp_prefs <- SurveyData$new(
+#'   data = bp_survey,
 #'   questions = list(
 #'     age = "Please identify your age group",
 #'     gender = "Please select your gender",
 #'     vote_for = "Which party did you vote for in the 2018 election?",
 #'     highest_educ = "Please identify your completed highest education",
 #'     state = "Please identify the state do you live in"
-#'     y = "Will you vote for the NLP if today is the election day?"
+#'     y = "Will you vote for the bp if today is the election day?"
 #'   ),
 #'   responses = list(
-#'     age = levels(nlp_survey$age),
-#'     gender = levels(nlp_survey$gender),
-#'     vote_for = levels(nlp_survey$vote_for),
-#'     highest_educ = levels(nlp_survey$highest_educ),
-#'     state = levels(nlp_survey$state),
+#'     age = levels(bp_survey$age),
+#'     gender = levels(bp_survey$gender),
+#'     vote_for = levels(bp_survey$vote_for),
+#'     highest_educ = levels(bp_survey$highest_educ),
+#'     state = levels(bp_survey$state),
 #'     y = c("no","yes")
 #'   ),
-#'   weights = nlp_survey$wt,
+#'   weights = bp_survey$wt,
 #'   design = list(ids =~1)
 #' )
-#' feline_prefs$print()
-#' feline_prefs$n_questions()
+#' bp_prefs$print()
+#' bp_prefs$n_questions()
 #'
 #' head(approx_voters_popn)
 #' popn_obj <- SurveyData$new(

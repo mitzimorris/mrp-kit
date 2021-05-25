@@ -17,13 +17,13 @@
 #'
 #' head(nlp_survey)
 #' nlp_prefs <- SurveyData$new(
-#'   data = nlp_prefs,
+#'   data = nlp_survey,
 #'   questions = list(
 #'     age = "Please identify your age group",
 #'     gender = "Please select your gender",
 #'     vote_for = "Which party did you vote for in the 2018 election?",
 #'     highest_educ = "Please identify your completed highest education",
-#'     state = "Please identify the state do you live in"
+#'     state = "Please identify the state you live in",
 #'     y = "Will you vote for the NLP if today is the election day?"
 #'   ),
 #'   responses = list(
@@ -34,7 +34,8 @@
 #'     state = levels(nlp_survey$state),
 #'     y = c("no","yes")
 #'   ),
-#'   weights = feline_survey$wt # optional
+#'   weights = nlp_survey$wt, # optional
+#'   design = list(ids =~1)
 #' )
 #' nlp_prefs$print()
 #'
@@ -57,7 +58,7 @@
 #'     education = levels(approx_voters_popn$education),
 #'     state = levels(approx_voters_popn$state)
 #'   ),
-#'   weights = approx_popn$wt # optional
+#'   weights = approx_voters_popn$wt # optional
 #' )
 #' popn_obj$print()
 #'
@@ -69,17 +70,19 @@
 #'     "46-55" = "36-55", "56-65" = "56-65", "66-75" = "66+", "76-90" = "66+"
 #'   )
 #' )
-#' q_pet <- SurveyQuestion$new(
-#'   name = "pet",
-#'   col_names = c("pet_own","pet_pref"),
-#'   values_map = list("cat" = "cat", "kitten" = "cat","dog" = "dog","puppy" = "dog")
+#' print(q_age)
+#'
+#' q_party <- SurveyQuestion$new(
+#'   name = "party_pref",
+#'   col_names = c("vote_for","vote_pref"),
+#'   values_map = list("Neverland Labor Party" = "NLP", "NLP" = "NLP","Neverland Democrats" = "The Democrats","The Democrats" = "The Democrats")
 #' )
 #' q_gender <- SurveyQuestion$new(
 #'   name = "gender",
 #'   col_names = c("gender", "gender"),
 #'   values_map = list("male" = "m","female" = "f", "nonbinary" = "nb")
 #' )
-#' q4 <- SurveyQuestion$new(
+#' q_educ <- SurveyQuestion$new(
 #'   name = "highest_education",
 #'   col_names = c("highest_educ", "education"),
 #'   values_map = list("no high school" = "no high school",
@@ -88,7 +91,7 @@
 #'                     "4-year college" = "4-year college",
 #'                     "post-graduate" = "post-grad")
 #' )
-#' q5 <- SurveyQuestion$new(
+#' q_state <- SurveyQuestion$new(
 #'   name = "state",
 #'   col_names = c("state", "state"),
 #'   values_map = list("State A" = "A", "State B" = "B", "State C" = "C",
@@ -97,22 +100,24 @@
 #'
 #' # Create SurveyMap object adding all questions at once
 #' ex_map <- SurveyMap$new(
-#'   sample = feline_prefs,
+#'   sample = nlp_prefs,
 #'   population = popn_obj,
 #'   q_age,
-#'   q_pet,
-#'   q_gender
+#'   q_party,
+#'   q_gender,
+#'   q_educ,
+#'   q_state
 #' )
 #' print(ex_map) # or ex_map$print()
 #'
 #' # Or can add questions incrementally
-#' ex_map <- SurveyMap$new(sample = feline_prefs, population = popn_obj)
+#' ex_map <- SurveyMap$new(sample = nlp_prefs, population = popn_obj)
 #' print(ex_map)
 #'
-#' ex_map$add(q_age, q_pet)
+#' ex_map$add(q_age, q_party)
 #' print(ex_map)
 #'
-#' ex_map$add(q_gender)
+#' ex_map$add(q_gender, q_educ, q_state)
 #' print(ex_map)
 #'
 #' # Create the mapping between sample and population
