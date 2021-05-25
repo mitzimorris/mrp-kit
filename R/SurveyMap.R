@@ -17,13 +17,13 @@
 #'
 #' head(nlp_survey)
 #' nlp_prefs <- SurveyData$new(
-#'   data = nlp_prefs,
+#'   data = nlp_survey,
 #'   questions = list(
 #'     age = "Please identify your age group",
 #'     gender = "Please select your gender",
 #'     vote_for = "Which party did you vote for in the 2018 election?",
 #'     highest_educ = "Please identify your completed highest education",
-#'     state = "Please identify the state do you live in"
+#'     state = "Please identify the state you live in",
 #'     y = "Will you vote for the NLP if today is the election day?"
 #'   ),
 #'   responses = list(
@@ -111,7 +111,7 @@
 #' print(ex_map) # or ex_map$print()
 #'
 #' # Or can add questions incrementally
-#' ex_map <- SurveyMap$new(sample = feline_prefs, population = popn_obj)
+#' ex_map <- SurveyMap$new(sample = nlp_prefs, population = popn_obj)
 #' print(ex_map)
 #'
 #' ex_map$add(q_age, q_party)
