@@ -281,7 +281,12 @@ Validate the mapping
 \if{html}{\out{<a id="method-mapping"></a>}}
 \if{latex}{\out{\hypertarget{method-mapping}{}}}
 \subsection{Method \code{mapping()}}{
-Prepare the mapped data
+The mapping method uses the given maps between questions to create new sample and population data
+that has unified variable names (i.e., if the underlying construct is called \code{age}, both sample and population will have
+an \code{age} column, even if in the the raw data both had different variable names). The method also unifies the levels of each
+variable in the sample and population so that the maximum set of consistent levels is created. Names of these new levels are
+made according the the sample level names. If multiple levels are combined, the new name will be existing levels seperated by a
+\code{+}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{SurveyMap$mapping()}\if{html}{\out{</div>}}
 }

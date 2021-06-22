@@ -344,56 +344,108 @@ SurveyMap <- R6::R6Class(
       invisible(self)
     },
 
-    #' @description Prepare the mapped data
+    #' @description The mapping method uses the given maps between questions to create new sample and population data
+    #' that has unified variable names (i.e., if the underlying construct is called `age`, both sample and population will have
+    #' an `age` column, even if in the the raw data both had different variable names). The method also unifies the levels of each
+    #' variable in the sample and population so that the maximum set of consistent levels is created. Names of these new levels are
+    #' made according the the sample level names. If multiple levels are combined, the new name will be existing levels seperated by a
+    #' ` + `.
+    #'
     mapping  = function() {
       for (j in 1:length(private$item_map_)) {
         samp_mapnames <- private$item_map_[[j]]$col_names()[1]
         popn_mapnames <- private$item_map_[[j]]$col_names()[2]
+        levels_samp <- levels(private$item_map_[[j]]$values()[, 1])
+        levels_popn <- levels(private$item_map_[[j]]$values()[, 2])
         levels_map_samp <- private$item_map_[[j]]$values()[, 1]
         levels_map_popn <- private$item_map_[[j]]$values()[, 2]
         new_varname <- private$item_map_[[j]]$name()
         new_levels_samp <- character(length(levels_map_samp))
         new_levels_popn <- character(length(levels_map_popn))
-        multiple_collapse <- rep(x = FALSE, length(levels_map_samp))
-        for (k in 1:length(levels_map_samp)) {
-          is_samp_unique <- sum(levels_map_samp %in% levels_map_samp[k]) == 1
-          is_popn_unique <- sum(levels_map_popn %in% levels_map_popn[k]) == 1
-          new_levels_samp[k] <- as.character(levels_map_samp[k])
-          new_levels_popn[k] <- as.character(levels_map_popn[k])
-          if (is_samp_unique && !is_popn_unique) {
-            names(new_levels_samp)[k] <- as.character(levels_map_popn[k])
-            names(new_levels_popn)[k] <- as.character(levels_map_popn[k])
-          } else if (is_samp_unique & is_popn_unique) {
-            names(new_levels_samp)[k] <- as.character(levels_map_samp[k])
-            names(new_levels_popn)[k] <- as.character(levels_map_samp[k])
-          } else if (!is_samp_unique && is_popn_unique) {
-            names(new_levels_samp)[k] <- as.character(levels_map_samp[k])
-            names(new_levels_popn)[k] <- as.character(levels_map_samp[k])
-          } else if (!is_samp_unique & !is_popn_unique) {
-            multiple_collapse[k] = TRUE
+
+        # Find the naming clusters of levels  (loosely inspired by complete linkage clustering algorithms.
+        # Three major steps:
+        # Step 1:  Create a matrix that has the factor level labels for the sample as row names, and factor level labels for the
+        # population as the column names. If the levels are linked, record 1 in the corresponding entry, otherwise record 0.
+        mapped_levels <- matrix(0,nrow=length(unique(levels_map_samp)),ncol = length(unique(levels_map_popn)))
+        colnames(mapped_levels)<-levels_popn
+        row.names(mapped_levels)<-levels_samp
+        for (unique_samp_levels in 1:length(mapped_levels[,1])) {
+          which_samp_levels <- levels_map_samp == levels_samp[unique_samp_levels]
+          for(corres_popn in levels_map_popn[which_samp_levels]){
+            mapped_levels[unique_samp_levels,unique(levels_popn) == corres_popn] <-1
           }
         }
-        if (sum(multiple_collapse) > 0) {
-          dup_labels_popn <- levels_map_popn[duplicated(levels_map_popn)]
-          dup_labels_samp <- levels_map_samp[duplicated(levels_map_samp)]
-
-          dup_labels_samp <- levels_map_samp %in% dup_labels_samp
-          dup_labels_popn <- levels_map_popn %in% dup_labels_popn
-
-          potential_indices <- dup_labels_samp + dup_labels_popn > 0
-          if (sum(multiple_collapse[potential_indices] > 0)) {
-            collapsed_names <- paste0(unique(levels_map_samp[potential_indices]), collapse = " + ")
-            names(new_levels_popn)[potential_indices] <- collapsed_names
-            names(new_levels_samp)[potential_indices] <- collapsed_names
-          } else {
-            stop("There is an error with the mapping. Please investigate further.")
-          }
-
+        if(sum(rowSums(mapped_levels, na.rm=TRUE)!=0)<nrow(mapped_levels)){
+          stop("Levels: ",paste(row.names(sum(rowSums(mapped_levels, na.rm=TRUE)!=0)),collapse = " ")," do not have a match in the population.")
         }
+        if(sum(colSums(mapped_levels, na.rm=TRUE)!=0)<ncol(mapped_levels)){
+          stop("Levels: ",paste(colnames(sum(colSums(mapped_levels, na.rm=TRUE)!=0)),collapse = " ")," do not have a match in the sample.")
+        }
+
+        # Moving down the rows (i.e., for each factor level in the sample), identify if there are multiple corresponding population
+        # values. If there are, merge the columns for the values together and combine the col names together, seperated by a ' + ' symbol.
+        tmp_mapped_levels <- mapped_levels
+        mapped_levels_new <- mapped_levels
+        for (unique_samp_levels in 1:length(mapped_levels[,1])) {
+          if(sum(mapped_levels[unique_samp_levels,],na.rm = TRUE)>1){
+            mapped_levels_new <- tmp_mapped_levels[,tmp_mapped_levels[unique_samp_levels,]!=1, drop = FALSE]
+            ll = ncol(mapped_levels_new)
+            mapped_levels_new <- cbind(mapped_levels_new,ifelse(rowSums(tmp_mapped_levels[,tmp_mapped_levels[unique_samp_levels,]==1])>=1,1,0))
+            colnames(mapped_levels_new)[ll+1] <- paste0(colnames(tmp_mapped_levels[,tmp_mapped_levels[unique_samp_levels,,drop = FALSE]==1,drop = FALSE]), collapse = " + ")
+            tmp_mapped_levels<- mapped_levels_new        }
+        }
+
+        # Moving across the now abridged columns (i.e., for every new facter level in the popn), identify if there are multiple
+        # corresponding sample values. If there are, merge the rows for the values together and combine the row names (sample factor levels)
+        # together, seperated by a " + " symbol
+
+        tmp_mapped_levels <- mapped_levels_new
+        mapped_levels_fin <- mapped_levels_new
+        for (unique_popn_levels in 1:length(mapped_levels_fin[1,])) {
+          if(sum(mapped_levels_new[,unique_popn_levels],na.rm = TRUE)>1){
+            mapped_levels_new <- tmp_mapped_levels[tmp_mapped_levels[,unique_popn_levels]!=1,, drop = FALSE]
+            ll = nrow(mapped_levels_new)
+            mapped_levels_new <- rbind(mapped_levels_new,ifelse(colSums(mapped_levels_fin[mapped_levels_fin[,unique_popn_levels]==1,])>=1,1,0))
+            row.names(mapped_levels_new)[ll+1] <- paste0(row.names(tmp_mapped_levels[tmp_mapped_levels[,unique_popn_levels, drop = FALSE]==1,,drop = FALSE]), collapse = " + ")
+            tmp_mapped_levels<- mapped_levels_new
+          }
+        }
+        mapped_levels_fin <- mapped_levels_new
+
+        # Create the name remapping, with the old names as the previous factor levels, and the names of the vector as the new levels
+        # For the sample
+        new_levels_samp_names <- length(new_levels_samp)
+        for(samp_level in 1:length(levels_samp)){
+          if(length(grep(levels_samp[samp_level],row.names(mapped_levels_fin)))>1){
+            #specific match
+            new_levels_samp_names[samp_level] <- row.names(mapped_levels_fin)[grep(paste0("^",levels_samp[samp_level],"$"),row.names(mapped_levels_fin))]
+          }else{
+            #partial match
+            new_levels_samp_names[samp_level] <- row.names(mapped_levels_fin)[grep(levels_samp[samp_level],row.names(mapped_levels_fin))]
+          }
+        }
+        new_levels_samp <- levels_samp
+        names(new_levels_samp) <- new_levels_samp_names
+        # For the population
+        new_levels_popn_names <- length(new_levels_popn)
+        for(popn_level in 1:length(levels_popn)){
+          if(length(grep(paste0(levels_popn[popn_level]),colnames(mapped_levels_fin)))>1){
+            popn_level_loc <- grep(paste0("^",levels_popn[popn_level],"$"),colnames(mapped_levels_fin))
+          } else{
+            popn_level_loc <- grep(levels_popn[popn_level],colnames(mapped_levels_fin))
+          }
+          #name the population levels according to the sample data
+          new_levels_popn_names[popn_level] <- row.names(mapped_levels_fin)[mapped_levels_fin[,popn_level_loc]==1]
+        }
+        new_levels_popn <- levels_popn
+        names(new_levels_popn) <- new_levels_popn_names
+
+        # Finally rename the data
         private$mapped_sample_data_[[new_varname]] <- forcats::fct_recode(private$sample_$survey_data()[[samp_mapnames]], !!!new_levels_samp)
         private$mapped_population_data_[[new_varname]] <- forcats::fct_recode(private$population_$survey_data()[[popn_mapnames]], !!!new_levels_popn)
       }
-      invisible(self)
+    invisible(self)
     },
 
     #' @description Prepare the poststratification table

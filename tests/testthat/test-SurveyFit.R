@@ -69,7 +69,8 @@ if (requireNamespace("rstanarm", quietly = TRUE)) {
       family = "binomial",
       iter = 10,
       chains = 1,
-      refresh = 0
+      refresh = 0,
+      seed = 123
     )
   )
   suppressWarnings(
@@ -79,7 +80,8 @@ if (requireNamespace("rstanarm", quietly = TRUE)) {
       family = "binomial",
       iter = 10,
       chains = 1,
-      refresh = 0
+      refresh = 0,
+      seed = 123
     )
   )
 }
@@ -92,7 +94,8 @@ if (requireNamespace("brms", quietly = TRUE)) {
       family = "bernoulli",
       iter = 10,
       chains = 1,
-      refresh = 0
+      refresh = 0,
+      seed = 123
     )
   )
 }
@@ -222,7 +225,7 @@ test_that("plot appearance hasn't changed", {
 
   # need to use deterministic inputs to the plots to test appearance changes
   popn <- data.frame(value = c(0.60, 0.65, 0.70, 0.75, 0.80))
-  by_age <- data.frame(age = factor(rep(1:4, 5), labels = popn_obj$responses()$age),
+  by_age <- data.frame(age = factor(rep(1:4, 5), labels = levels(ex_map$mapped_sample_data()$age)),
                        draw = rep(1:5, each = 4),
                        value = c(0.299514804640785, 0.217973976861686, 0.258871184848249, 0.271914651058614,
                                  0.31649006572552, 0.697755558183417, 0.209188556019217, 0.431414544349536,
@@ -273,6 +276,4 @@ test_that("Populations are within acceptable tolerance of previous runs (+/- 2% 
   #This is VERY noisy
   x <- fit_stan_glm$aggregate(fit_stan_glm$population_predict())
   expect_equal(mean(x$value), expected = .72, tolerance = .15)
-
 })
-

@@ -105,9 +105,9 @@ test_that("validate creates correct levels (example1)", {
   expect_silent(ex_map <- SurveyMap$new(samp, popn, q_age))
   ex_map$mapping()
   expect_setequal(ex_map$mapped_sample_data()$age,
-                  c('18-45', "46+"))
+                  c('18-25 + 26-45', "46+"))
   expect_setequal(ex_map$mapped_population_data()$age,
-                  c('18-45', "46+"))
+                  c('18-25 + 26-45', "46+"))
 })
 
 test_that("validate creates correct levels (example2)", {
@@ -146,9 +146,10 @@ test_that("validate creates correct levels (example2)", {
   expect_silent(ex_map <- SurveyMap$new(samp, popn, q_age))
   ex_map$mapping()
   expect_setequal(ex_map$mapped_sample_data()$age[1:10],
-                  c("18-45", "18-45", "46+", "18-45", "18-45", "46+", "18-45", "18-45", "46+", "18-45"))
+                  c("18-25 + 26-45", "18-25 + 26-45", "46+","18-25 + 26-45", "18-25 + 26-45", "46+", "18-25 + 26-45",
+                    "18-25 + 26-45", "46+", "18-25 + 26-45"))
   expect_setequal(ex_map$mapped_population_data()$age[1:10],
-                  c("18-45", "46+", "18-45", "46+", "18-45", "46+", "18-45", "46+", "18-45", "46+"))
+                  c("18-25 + 26-45", "46+", "18-25 + 26-45", "46+", "18-25 + 26-45", "46+", "18-25 + 26-45", "46+", "18-25 + 26-45", "46+"))
 })
 
 
@@ -317,7 +318,7 @@ test_that("validate creates correct levels (example6)", {
   ex_map$mapping()
   expect_setequal(levels(ex_map$mapped_sample_data()$age),
                   c("A + B","C","D + E"))
-  expect_setequal(ex_map$mapped_population_data()$age,
+  expect_setequal(levels(ex_map$mapped_population_data()$age),
                   c("A + B","C","D + E"))
 })
 
@@ -341,13 +342,12 @@ test_that("validate errors if NAs in population data", {
   )
 })
 
-# This test is currently failing. Should it be?
-# Expected match: "Predictor variables not known in population."
 test_that("Error if predictor vars not included in poststrat matrix",{
   ex_map <- SurveyMap$new(samp, popn, q_age, q_pet,q_gender)
   ex_map$mapping()
   ex_map$tabulate()
-  #change the internal poststrat to trigger error
+
+  # change the internal poststrat to trigger error
   # This is a very unlikely thing to happen, but just in case!
   ex_map$.__enclos_env__$private$poststrat_data_<-ex_map$.__enclos_env__$private$poststrat_data_[c("age","pet","N_j")]
   skip_if_not_installed("lme4")
@@ -387,7 +387,7 @@ test_that("Error if predictor vars not included in poststrat matrix",{
   )
 })
 
-test_that("Error if vars not included in data",{
+test_that("Error if vars not included in data", {
   ex_map <-  SurveyMap$new(samp, popn, q_age,q_pet,q_gender)
   ex_map$mapping()
   ex_map$tabulate()
