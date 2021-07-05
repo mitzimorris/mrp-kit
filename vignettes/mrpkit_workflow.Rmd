@@ -1,8 +1,8 @@
 ---
-title: "Getting Started with MRP-Kit"
+title: "Getting Started with mrpkit"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting Started with MRP-Kit}
+  %\VignetteIndexEntry{Getting Started with mrpkit}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,18 +15,19 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, message = FALSE}
 library(mrpkit)
+library(dplyr)
 ```
 
-This vignette presents the typical workflow of MRP-Kit, an R package for implementing a "grammar" for multilevel regression with post-stratification.
+This vignette presents the typical workflow of `mrpkit`, an R package for implementing a multilevel regression with post-stratification.
 
 
 # Introduction
 
-The aim of `mrpkit` is to use a grammar to perform multilevel regression with post-stratification (MRP). By using this package, you follow a specific workflow of MRP from creating the metadata of the survey and post-stratification objects, mapping these objects to each other, fitting the model, getting predictions, aggregating values, and visualizing the results. Hence, it creates a more reproducible and accountable environment for conducting MRP.
+The aim of `mrpkit` is to perform multilevel regression with post-stratification (MRP; Gelman & Little, 1997; Park, Gelman, & Bafumi, 2004). By using this package, you follow a specific workflow of MRP from creating the metadata of the survey and post-stratification objects, mapping these objects to each other, fitting the model, getting predictions, aggregating values, and visualizing the results. Hence, it creates a more reproducible and accountable environment for conducting MRP.
 
-Unlike many R packages, `mrpkit` uses [R6 objects](https://adv-r.hadley.nz/r6.html) (Chang, 2019). Thus, instead of calling a function to perform a task, we call a method that is embedded to an object using `object$method`. Typical usage of this package will create four objects: `SurveyData`, `QuestionMap`, `SurveyMap`, and `SurveyFit`. There are several methods in each of these objects that will be explained later in this vignette.     
+Unlike many R packages, `mrpkit` uses [R6 objects](https://adv-r.hadley.nz/r6.html) (Chang, 2019). Thus, instead of calling a function to perform a task, we call a method embedded in an object using `object$method`. Typical usage of this package will create four objects: `SurveyData`, `QuestionMap`, `SurveyMap`, and `SurveyFit`. There are several methods in each of these objects that will be explained later in this vignette.  
 
 
 # Workflow
@@ -38,15 +39,15 @@ The workflow to use `mrpkit` to implement MRP is:
 3. Match the values between the survey and post-stratification datasets for each question.
 4. Map the questions between the survey and post-stratification datasets.
 5. Fit the model.
-6. Get the estimated value of the response variable's probability based on the post-stratification dataset.
-7. Aggregate the estimated value to some level of instance, for example for state/province level.
-8. Visualize the estimated probability.
+6. Predict the probability of the outcome using the post-stratification dataset.
+7. Estimate the probability of the outcome at a level of interest, for example, state/province level.
+8. Visualize the probability of the outcome.
 
 A more detailed example of this workflow follows.
 
 ## Prepare the data
 
-In this vignette we simulate survey and post-stratification datasets. These datasets display the preference of voters to the Box Party (BP), a political party in a fake country, Shape World, along with demographic variables. The population is designed using `declare_population` from `DeclareDesign` (Blair, Cooper, Coppock & Humphreys, 2019) to set the features in the population.
+In this vignette, we simulate survey and post-stratification datasets. These datasets display the preference of voters to the Box Party (BP), a political party in a fake country, Shape World, along with demographic variables. The population is designed using `declare_population` from `DeclareDesign` (Blair, Cooper, Coppock, & Humphreys, 2019) to set the features in the population.
 
 We can see every variable in the survey data as follows:
 
@@ -65,16 +66,16 @@ head(approx_voters_popn)
 
 `SurveyData` are objects used to represent both the survey and the post-stratification datasets, along with their metadata. The survey metadata consists of the survey's variables, the questions that were asked, and the levels of the responses. It is also optionally to include the survey weight and its design formula to this object. 
 
-The most important methods in `SurveyData` are `SurveyData$new` and `SurveyData$print`. The `SurveyData$new` is used to transform a regular dataframe to a `SurveyData` object, whereas `SurveyData$print` is used to print the created `SurveyData` object.
+The most important methods in `SurveyData` are `SurveyData$new` and `SurveyData$print`. The `SurveyData$new` is used to transform a regular data frame to a `SurveyData` object, whereas `SurveyData$print` is used to print the created `SurveyData` object.
 
 In this example, we will show the steps to create the `SurveyData` object using `SurveyData$new` method. `SurveyData` takes the argument of the metadata as mentioned previously, which are:
 
-1. `data` : Dataframe i.e. survey or post-stratifcation data that would be transformed to a `SurveyData` object.
-Note that this method will automatically use each of the factor, character, and binary variables to create questions and responses if you do not specify the list of questions and responses. If you want to use any numerical variables in `data`, we suggest that you set it in this method, or convert it into one of those data types. Otherwise, it would not be included in the object. After `SurveyData` is initialized, we can print it using the `print` method as shown below.
+1. `data` : Data frame, i.e., survey or post-stratification data that would be transformed to a `SurveyData` object.
+Note that this method will automatically use each of the factor, character, and binary variables to create questions and responses if you do not specify the list of questions and responses. After `SurveyData` is initialized, we can print it using the `print` method as shown below.
 2. `questions`: The question asked in the questionnaire for each of those columns.
 3. `responses`: Allowed response for each question.
-4. `weights`: The survey weights.
-5. `design`: The design formula of the survey, specified using the survey package format
+4. `weights`: This is an optional argument of the survey or post-stratification/population weight. If the weight is specified as a column in the datasets, then this argument should be specify as string data type. in this case, it is "wt" for `shape_survey` and `approx_voters_popn`. Another example is if the population is summarized as a post-stratification matrix already, then the weight would be the size of each cell, denote by $N_j$. Further, if the entire individual level population is given, the the this argument should be omitted and it would be automatically specify as 1. 
+5. `design`: This is an optional argument of the design formula of the survey, specified using the `survey` (Lumley, 2020) package notation.
 
 **Create the `SurveyData` object for the survey data set**
 
@@ -93,7 +94,7 @@ box_pref <- SurveyData$new(
                    highest_educ = levels(shape_survey$highest_educ),
                    state = levels(shape_survey$state),
                    y = c("no","yes")),
-  weights = shape_survey$wt,
+  weights = "wt",
   design = list(ids =~1))
 
 # print it
@@ -102,9 +103,10 @@ box_pref$print()
 
 **Create the `SurveyData` object for the post-stratification dataset**
 
+The following code is used to create SurveyData object for post-stratification data when the weight is already specified in the datasets. Usually, the post-stratification data is from a large survey, for example, the American Community Survey (ACS) or Demographic and Health Survey (DHS). 
+
 ```{r poststrat-object}
 
-# create SurveyData object for post-stratification data
 popn_obj <- SurveyData$new(
   data = approx_voters_popn,
   questions = c(age_group = "Which age group are you?",
@@ -117,24 +119,73 @@ popn_obj <- SurveyData$new(
                    vote_pref = levels(approx_voters_popn$vote_pref),
                    education = levels(approx_voters_popn$education),
                    state = levels(approx_voters_popn$state)),
-  weights = approx_voters_popn$wt,
+  weights = "wt",
   design = list(ids =~1))
 
 # print it
 popn_obj$print() 
 ```
 
+The following code is the example of weight specification as the summarized post-stratification matrix. Also, here the survey design is not specified as well. 
+
+```{r poststrat-example2}
+
+# Create the weight as the sum of each post-stratification cell
+
+popn_poststrat <- approx_voters_popn %>%
+  group_by(age_group, gender, vote_pref, education, state) %>%
+  summarise(N_j = sum(wt))
+
+# create the SurveyData object and set the weight ast N_j
+popn_obj_poststrat <- SurveyData$new(
+  data = popn_poststrat,
+  questions = c(age_group = "Which age group are you?",
+                gender = "Which gender are you identified?",
+                vote_pref = "Which party do you prefer to vote?",
+                education = "What is the highest grade or level of school you have completed",
+                state = "Please identify the state where you live in"),
+  responses = list(age_group = levels(approx_voters_popn$age_group),
+                   gender = levels(approx_voters_popn$gender),
+                   vote_pref = levels(approx_voters_popn$vote_pref),
+                   education = levels(approx_voters_popn$education),
+                   state = levels(approx_voters_popn$state)),
+  weights = "N_j")
+
+popn_obj_poststrat$print()
+```
+
+If the population data uses the entire individual level, then the weight should not be specified, as shown in this example. 
+
+```{r poststrat-example3}
+
+popn_obj_entire_ind <- SurveyData$new(
+  data = popn_poststrat,
+  questions = c(age_group = "Which age group are you?",
+                gender = "Which gender are you identified?",
+                vote_pref = "Which party do you prefer to vote?",
+                education = "What is the highest grade or level of school you have completed",
+                state = "Please identify the state where you live in"),
+  responses = list(age_group = levels(approx_voters_popn$age_group),
+                   gender = levels(approx_voters_popn$gender),
+                   vote_pref = levels(approx_voters_popn$vote_pref),
+                   education = levels(approx_voters_popn$education),
+                   state = levels(approx_voters_popn$state)))
+
+popn_obj_entire_ind$print()
+```
+
+In addition, sometimes, we want to access the properties of the `SurveyData` object, for example, the weights, the design, the questions and the number of questions, or the responses. The `SurveyData` object has methods that allow us to do so. They are `SurveyData$weights()` and `SurveyData$design()` to access the weight and the design, respectively. Further, the the questions, the number of questions, and the responses could be accessed using `SurveyData$questions()`, `SurveyData$n_questions()`, and `SurveyData$responses()`. 
 
 ## Match the value between survey and post-stratification object using `QuestionMap$new`
 
-From the metadata above, we can see that `box_pref` and `popn_obj` have different column labels and response level. For example, the column label for age in `box_pref` is `age`, whereas in `popn_obj`, the column label is `age_group`. This variable also has different levels, `box_pref` has seven levels of age, whereas `popn_obj` has only four levels of age. 
+From the metadata above, we can see that the survey (`box_pref`) and population (`popn_obj`) objects have different column labels and response levels. For example, the column label for age in `box_pref` is `age`, whereas, in `popn_obj`, the column label is `age_group`. This variable also has different levels, `box_pref` has seven levels of age, whereas `popn_obj` has only four levels of age. 
 
 These column labels and levels should be aligned to be able to perform MRP. With `QuestionMap$new` method, we are able to align the names of the columns and mapping their values.  
 
 This method takes three arguments:
 
-1. `name` : the name of the underlying construct, this will be used in the modeling stage.
-2. `col_names`: a character vector of the column label in the survey and post-stratification objects. Note that, column name of survey should always be the first element, followed by the column name of post-stratification object. This order is not interchangeable. 
+1. `name` : the name of the underlying construct. This will be used in the modeling stage.
+2. `col_names`: a character vector of the column label in the survey and post-stratification objects. Note that, column name of the survey should always be the first element, followed by the column name of the post-stratification object. This order is not interchangeable.  
 3. `values_map`: list of the mapped values between the survey and post-stratification object. If there is a meaningful ordering over the values, they should be sorted over that order, either descending or ascending.
 
 Here is the example of how this method works:
@@ -197,7 +248,7 @@ The `SurveyMap` object has various methods as listed as follows:
 
 2. `validate`
 
-    This method is used for `SurveyMap` object validation. It will throw an error if there is a level mismatch in the map. Additionally, it will give a warning when one or more variables are available in the post-stratification dataset but they are not mapped (thus would not be used in the model).
+    This method is used to initialize a new `SurveyMap` object. This takes `SurveyData` and `QuestionMap` objects as its argument. You can include all of the questions here or add them incrementally using the `add` method that is explained in point 3. 
 
     Below is the example of `new` and `validate` methods usage:
 
@@ -228,7 +279,7 @@ print(ex_map)
 
 4. `delete`
 
-    Now we already have all of the questions in the post-stratification object mapped. Sometimes, we do not want to include all of the variables in the post-stratification matrix, for example, in this case, we want to exclude `party_pref` from the matrix using `delete` method.
+    Now, we already have all of the questions in the post-stratification object mapped. Sometimes, we do not want to include all of the variables in the post-stratification matrix. For example, in this case, we want to exclude `party_pref` from the matrix using `delete` method.
 
 ```{r delete}
 # we can also use the label instead of the object name
@@ -237,8 +288,6 @@ print(ex_map)
 ```
 
 5. `replace`
-
-    Replace is used to replace the matching level in one question, not between different question.
 
     Suppose that you changed your mind and want to use another level of matching for a certain question. For example, in question regarding education, q4, you want to change the "associates" level to be equal to "4-years college". To do this, you can firstly create a new `QuestionMap` object corresponding to that new level mapping. Secondly, you can use the `replace` method to change the question object. This method takes two arguments, namely `old question` as the first argument and the `new question` as the second argument. The example of these steps could be seen as follows:
     
@@ -286,13 +335,13 @@ ex_map$tabulate()
 
 8. `fit`
 
-    Finally, we are able to fit the model using `fit` method. Currently this package supports `rstanarm::stan_glmer`, `rstanarm::stan_glm`, `stats::glm`, `lme4::glmer`, `brms::brm` as the built-in functions. However, you could also specify your own function. In this case, you should give a `data` argument that accepts a dataframe. In this example, we fit three models using `fun=rstanarm::stan_glmer`, `fun=lme4::glmer`, and `fun=brms:brm` with `age` and `gender` as the predictors.
+    Finally, we are able to fit the model using `fit` method. Currently, this package supports `rstanarm::stan_glmer` and `rstanarm::stan_glm` (Goodrich, Gabry, Ali, & Brilleman, 2020), `stats::glm` (R Core Team, 2020), `lme4::glmer` (Bates, Maechler, Bolker, & Walker, 2015) , `brms::brm` (Bürkner, 2018) as the built-in functions. However, you could also specify your own function. In this case, you should give a `data` argument that accepts a data frame. In this example, we fit three models using `fun=rstanarm::stan_glmer`, `fun=lme4::glmer`, and `fun=brms:brm` with `age`, `gender`, and `education` as the predictors.
 
 ```{r  fitting}
 # the example of using stan_glmer
 fit1 <- ex_map$fit(
   fun = rstanarm::stan_glmer,
-  formula = y ~ (1|age) + (1|gender),
+  formula = y ~ (1|age) + (1|gender) + (1|highest_educ),
   family = "binomial",
   refresh = 100,
   cores = 2)
@@ -300,7 +349,7 @@ fit1 <- ex_map$fit(
 # the example of using glmer
 fit2 <- ex_map$fit(
   fun = lme4::glmer,
-  formula = y ~ (1|age) + (1|gender),
+  formula = y ~ (1|age) + (1|gender) + (1|highest_educ),
   family = "binomial")
 
 ```
@@ -316,14 +365,14 @@ fit3 <- ex_map$fit(
 
 ## Playing with the fitted model with `SurveyFit`
 
-In this stage, we already have the fitted model object i.e. `fit1` and `fit2`. These objects have been automatically stored as `SurveyFit` objects. Further, using this object, we can generate the predicted probabilities for all post-stratification cell, aggregate the small area estimation, for example state or province estimates, and visualize the aggregated estimates. 
+In this stage, we already have the fitted model object, i.e., `fit1` and `fit2`. These objects have been automatically stored as `SurveyFit` objects. Further, using this object, we can generate the predicted probabilities for all post-stratification cells, aggregate the small area estimation, for example, state or province estimates, and visualize the aggregated estimates. 
 
 
-### Get the prediction value of each post-stratification cell
+### Get the probability of the outcome from each poststratification cells
 
-After creating the `SurveyFit` object, we are able to generate the predicted probability of each post-stratification cell using the `population_predict` method. It returns a matrix with rows that correspond to the columns of post-stratification data and columns that correspond to the posterior samples.
+After creating the `SurveyFit` object, we are able to generate the predicted probability of the outcome of each post-stratification cell using the `population_predict` method. It returns a matrix with rows that correspond to the columns of post-stratification data and columns that correspond to the posterior samples.
 
-Furthermore, if the model fitting is done with one of the built-in function (`rstanarm::stan_glmer`, `lme4::glmer`, `brms::brm`), then this method does not take any arguments. However, if you used a customized function in the model fitting, then this method takes two argument. The first is the fitted model object, and the second is the post-stratification data frame. In this example, we will show how to use this method for the `fit1` object.
+Furthermore, if the model fitting is done with one of the built-in functions (`rstanarm::stan_glmer`, `lme4::glmer`, `brms::brm`), then this method does not take any arguments. However, if you used a customized function in the model fitting, then this method takes two arguments. The first is the fitted model object, and the second is the post-stratification data frame. In this example, we will show how to use this method for the `fit1` object.
 
 ```{r predict}
 # predict the probability of voting for the Box Party using the fit1 model
@@ -331,7 +380,7 @@ poststrat_est_fit1 <- fit1$population_predict()
 ```
 
 
-### Aggregate the prediction to a higher level of estimate
+### Aggregate the probbility of the outcome to a higher level of estimate
 
 The next step is to generate the population estimate or group estimate using the `aggregate` method. This method takes two arguments, namely the post-stratification estimate data and the variable whose level to which the estimated value would be aggregated to. In this example, we want to aggregate the estimated value by the level of `age` and `state`. If the variable is not specified, then this method would generate a population estimate.
 
@@ -348,15 +397,22 @@ popn_estimation <- fit1$aggregate(poststrat_est_fit1)
 
 ```
 
-This method then will return a dataframe with variable levels, the draw/iteration, and the probability of the `y`. In this example, `age_preds` represents the age-group, the draw, and the probability of voting for the Box Party for each age-group and each draw.
+This method then will return a data frame with the variable levels and probability of the outcome, `y`. In this example, `age_preds` represents the age group and the probability of voting for the Box Party for each age group. You can also get the mean of the probability of voting the BP by age group and its standard deviation with the help of `sumarrize` function from `dplyr` (Wickham, François, Henry & Müller, 2020) using the code as follows. 
 
 ```{r show-aggr}
-head(age_estimation)
+head(age_estimation) 
+
+# get the mean and sd for each age group
+
+age_estimation %>%
+group_by(age) %>%
+summarize(mean = mean(value), sd = sd(value))
 ```
 
 ### Visualize it
 
-Once we have the aggregated estimates, we are able to visualize them using the `plot` method. This method takes the aggregated data frame as the argument. It generates a violin plot of the aggregated estimate by level of certain variable, in this case `age` and `state` and a density plot for the population estimates. In the example below, we show estimates for different levels of the `age` and `state` variables.
+Once we have the aggregated estimates, we are able to visualize them using the `plot` method. This method takes the aggregated data frame and weights option (the default is TRUE) as its arguments. It generates a violin plot of the aggregated estimate by the level of a certain variable. When the weight is equal to TRUE, the estimation is weighted. Also, the plot would display the 95% confidence interval of the weighted estimation. 
+In this example, we display the estimated plot for `age` and `state` and a density plot for the population estimates. 
 
 
 ```{r age-vis}
@@ -364,18 +420,58 @@ plot_age <- fit1$plot(age_estimation)
 plot_age
 ```
 
-The plot above shows the distribution of people vote for the Box Party for each age-group. The plot implies that people who are aged 56-65 are most likely to vote for the BP.
+The plot above shows the distribution of people who vote for the Box Party for each age group. The plot implies that people who are aged 36-55 are most likely to vote for the BP.
 
-The next plot displays the probability of voting for the BP by state. We learn that the probability of the BP winning the election is high since the majority of people (around 75%) in all of the states in Shape World vote for that party. Note that this violin plot is generated using `ggplot2` (Wickham, 2016). Hence, it could be modified the same way `ggplot2`'s plot modified. For example, here, we can add title and change the theme of the plot.
+The next plot displays the probability of voting for the BP by the state without using the weight. We learn that the probability of the BP winning the election is high since the majority of people in all states (around 75%) vote for that party. Note that this violin plot is generated using `ggplot2` (Wickham, 2016). Hence, it could be modified the same way `ggplot2`'s plot is modified. For example, here, we can add the title and change the theme of the plot.
 
 
 ```{r state-vis}
 library(ggplot2)
-plot_state <- fit1$plot(state_estimation) +
+plot_state <- fit1$plot(state_estimation, weights = FALSE) +
   ggtitle("Probability of voting the BP by state") +
   theme_bw()
 plot_state
 ```
+
+Lastly, we show the plot of the population estimate. About 70% of people in the Shape World will be likely to vote for the Box Party. 
+
+```{r}
+fit1$plot(popn_estimation, weights = TRUE)
+```
+
+## See More:
+
+
+Bates, D., Maechler, M., Bolker, B., & Walker, S. (2015). Fitting Linear Mixed-Effects
+  Models Using lme4. Journal of Statistical Software, 67(1), 1-48. doi:10.18637/jss.v067.i01.
+  
+Blair, G., Cooper, J., Coppock, A., & Humphreys, M. (2019). Declaring and
+  Diagnosing Research Designs. American Political Science Review 113(3): 838-859. URL
+  http://declaredesign.org/declare.pdf
+
+Bürkner, P.C. (2018). Advanced Bayesian Multilevel Modeling with the R Package brms. The
+  R Journal, 10(1), 395-411. doi:10.32614/RJ-2018-017
+
+Chang, W. (2019). R6: Encapsulated Classes with Reference Semantics. R package version 2.4.1.
+  https://CRAN.R-project.org/package=R6
+  
+Gelman, A., & Little, T. C. (1997). Poststratification into many categories using hierarchical logistic regression. Survey Methodology, 23(2), 127–135.
+
+Goodrich, B., Gabry, J., Ali, I., & Brilleman S. (2020). rstanarm: Bayesian applied regression modeling
+  via Stan. R package version 2.21.1 https://mc-stan.org/rstanarm.
+
+Lumley, T. (2020) "survey: analysis of complex survey samples". R package version 4.0.
+
+Park, D. K., Gelman, A., & Bafumi, J. (2004). Bayesian multilevel esti-
+mation with poststratification: State-level estimates from national polls. Political Analysis, 12(4), 375–385.
+
+R Core Team. (2020). R: A language and environment for statistical computing. R Foundation for
+  Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
+  
+Wickham, H., François, R., Henry, L., & Müller, K. (2020). dplyr: A Grammar of Data
+  Manipulation. R package version 1.0.2. https://CRAN.R-project.org/package=dplyr
+  
+Wickham, H. (2016). ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York
 
 
 
